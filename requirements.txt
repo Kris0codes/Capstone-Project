@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+vosk
+gTTS
+soundfile
+transformers
+torch
+sentencepiece
+requests
+python-multipart
+pydub
