@@ -1,0 +1,29 @@
+# Python virtual environments
+railinfo_env/
+venv/
+.env/
+
+# Large model files
+*.h5
+*.hdf5
+*.pkl
+*.joblib
+*.pt
+*.onnx
+*.ckpt
+models/
+checkpoints/
+
+# Cache and temp files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+.DS_Store

@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RailInfo Assistant - Smart Railway Information System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'display': ['Poppins', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        background: 'hsl(var(--background))',
+                        foreground: 'hsl(var(--foreground))',
+                        primary: 'hsl(var(--primary))',
+                        'primary-foreground': 'hsl(var(--primary-foreground))',
+                        secondary: 'hsl(var(--secondary))',
+                        'secondary-foreground': 'hsl(var(--secondary-foreground))',
+                        muted: 'hsl(var(--muted))',
+                        'muted-foreground': 'hsl(var(--muted-foreground))',
+                        accent: 'hsl(var(--accent))',
+                        'accent-foreground': 'hsl(var(--accent-foreground))',
+                        border: 'hsl(var(--border))',
+                        input: 'hsl(var(--input))',
+                        ring: 'hsl(var(--ring))',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 222.2 84% 4.9%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 224.3 76.3% 94.1%;
+        }
+
+        .light {
+            /* Light Mode Overrides */
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96%;
+            --secondary-foreground: 222.2 84% 4.9%;
+            --muted: 210 40% 96%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96%;
+            --accent-foreground: 222.2 84% 4.9%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 215 20.2% 65.1%;
+        }
+
+        * {
+            border-color: hsl(var(--border));
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: 'Inter', system-ui, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .navbar-blur {
+            backdrop-filter: blur(10px);
+            background-color: hsla(var(--background), 0.8);
+        }
+
+        .mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+
+        .btn-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            background-color: hsl(var(--primary) / 0.9);
+        }
+
+        .btn-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-secondary:hover {
+            background-color: hsl(var(--secondary) / 0.8);
+        }
+
+        .chat-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+
+        .chat-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Chat Modal Styles */
+        .chat-modal-overlay {
+            backdrop-filter: blur(8px);
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .chat-message-user {
+            background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+            color: hsl(var(--primary-foreground));
+        }
+
+        .chat-message-bot {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .recording-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-background text-foreground pt-16">
+    <nav class="fixed top-0 left-0 right-0 z-50 navbar-blur border-b border-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-train text-primary-foreground text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display font-bold text-xl text-foreground" data-translate="app-title">RailInfo</h1>
+                        <p class="text-xs text-muted-foreground" data-translate="app-subtitle">Smart Railway Assistant</p>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-foreground hover:text-primary transition-colors" data-translate="nav-home">Home</a>
+                    <a href="#services" class="text-foreground hover:text-primary transition-colors" data-translate="nav-services">Services</a>
+                    <a href="#about" class="text-foreground hover:text-primary transition-colors" data-translate="nav-about">About</a>
+                    <a href="#contact" class="text-foreground hover:text-primary transition-colors" data-translate="nav-contact">Contact</a>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-4">
+                    <select id="languageSelect" class="bg-secondary text-secondary-foreground px-3 py-2 rounded-lg border border-border text-sm">
+                        <option value="en">English</option>
+                        <option value="hi">हिंदी</option>
+                        <option value="kn">ಕನ್ನಡ</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="te">తెలుగు</option>
+                    </select>
+
+                    <button id="themeToggle" class="p-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-accent transition-colors">
+                        <i class="fas fa-moon text-sm"></i>
+                    </button>
+                </div>
+
+                <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg bg-secondary text-secondary-foreground">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobileMenu" class="mobile-menu fixed top-16 left-0 w-full h-screen bg-background border-r border-border md:hidden">
+            <div class="p-6 space-y-6">
+                <div class="space-y-4">
+                    <a href="#home" class="block text-foreground hover:text-primary transition-colors text-lg" data-translate="nav-home">Home</a>
+                    <a href="#services" class="block text-foreground hover:text-primary transition-colors text-lg" data-translate="nav-services">Services</a>
+                    <a href="#about" class="block text-foreground hover:text-primary transition-colors text-lg" data-translate="nav-about">About</a>
+                    <a href="#contact" class="block text-foreground hover:text-primary transition-colors text-lg" data-translate="nav-contact">Contact</a>
+                </div>
+                
+                <div class="pt-6 border-t border-border space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-muted-foreground mb-2" data-translate="language-label">Language</label>
+                        <select id="mobileLanguageSelect" class="w-full bg-secondary text-secondary-foreground px-3 py-2 rounded-lg border border-border">
+                            <option value="en">English</option>
+                            <option value="hi">हिंदी</option>
+                            <option value="kn">ಕನ್ನಡ</option>
+                            <option value="ta">தமிழ்</option>
+                            <option value="te">తెలుగు</option>
+                        </select>
+                    </div>
+                    
+                    <button id="mobileThemeToggle" class="w-full flex items-center justify-center space-x-2 p-3 rounded-lg bg-secondary text-secondary-foreground hover:bg-accent transition-colors">
+                        <i class="fas fa-moon"></i>
+                        <span data-translate="toggle-theme">Toggle Theme</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="min-h-[70vh] flex items-center hero-gradient pt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="text-center">
+                <h1 class="font-display font-bold text-4xl md:text-6xl lg:text-7xl text-primary-foreground mb-6 leading-tight">
+                    <span data-translate="hero-title-1">Smart Railway</span>
+                    <span class="block" data-translate="hero-title-2">RailInfo System</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-primary-foreground/80 mb-8 max-w-3xl mx-auto leading-relaxed" data-translate="hero-description">
+                    Get instant access to PNR status, train schedules, seat availability, and more.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                    <a href="#services" class="btn-primary px-8 py-4 rounded-xl font-semibold text-lg flex items-center space-x-3 hover:scale-105 transition-transform">
+                        <i class="fas fa-search"></i>
+                        <span data-translate="explore-services">Explore Services</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-10 bg-background">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <button id="openVoiceModalBtn" class="chat-button text-white px-8 py-4 rounded-xl font-semibold text-lg flex items-center space-x-3 hover:scale-105 transition-all">
+                    <i class="fas fa-microphone"></i>
+                    <span data-translate="chat-voice">Chat with Voice</span>
+                </button>
+                <button id="openTextModalBtn" class="chat-button text-white px-8 py-4 rounded-xl font-semibold text-lg flex items-center space-x-3 hover:scale-105 transition-all">
+                    <i class="fas fa-comments"></i>
+                    <span data-translate="chat-text">Chat with Text</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="py-20 bg-muted">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="font-display font-bold text-3xl md:text-4xl text-foreground mb-4" data-translate="services-title">Railway Information Services</h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto" data-translate="services-description">Use the forms below for specific, direct queries.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <div class="bg-background rounded-xl p-6 shadow-xl border border-border">
+                    <h3 class="font-display font-bold text-2xl text-primary mb-4 flex items-center space-x-2">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span data-translate="pnr-status">PNR Status Check</span>
+                    </h3>
+                    <form id="pnrForm" onsubmit="checkPNR(event)" class="space-y-4">
+                        <input type="text" id="pnrInput" data-translate-placeholder="pnr-placeholder" placeholder="Enter 10-digit PNR Number" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold" data-translate="check-status">Check Status</button>
+                    </form>
+                    <div id="pnrResult" class="mt-4 p-4 border border-border rounded-lg bg-secondary/30 text-secondary-foreground text-sm hidden">
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-xl p-6 shadow-xl border border-border">
+                    <h3 class="font-display font-bold text-2xl text-primary mb-4 flex items-center space-x-2">
+                        <i class="fas fa-location-arrow"></i>
+                        <span data-translate="train-status">Live Train Status</span>
+                    </h3>
+                    <form id="trainStatusForm" onsubmit="checkTrain(event)" class="space-y-4">
+                        <input type="text" id="trainInput" data-translate-placeholder="train-number-placeholder" placeholder="Enter Train Number (e.g., 12001)" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <input type="date" id="dateInput" data-translate-placeholder="date-placeholder" placeholder="Date of Journey" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold" data-translate="get-live-status">Get Live Status</button>
+                    </form>
+                    <div id="trainResult" class="mt-4 p-4 border border-border rounded-lg bg-secondary/30 text-secondary-foreground text-sm hidden">
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-xl p-6 shadow-xl border border-border">
+                    <h3 class="font-display font-bold text-2xl text-primary mb-4 flex items-center space-x-2">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span data-translate="train-schedule">Train Schedule</span>
+                    </h3>
+                    <form id="scheduleForm" onsubmit="getSchedule(event)" class="space-y-4">
+                        <input type="text" id="scheduleTrainInput" data-translate-placeholder="train-number-placeholder" placeholder="Enter Train Number (e.g., 12001)" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold" data-translate="get-schedule">Get Schedule</button>
+                    </form>
+                    <div id="scheduleResult" class="mt-4 p-4 border border-border rounded-lg bg-secondary/30 text-secondary-foreground text-sm hidden">
+                    </div>
+                </div>
+                
+                <div class="bg-background rounded-xl p-6 shadow-xl border border-border">
+                    <h3 class="font-display font-bold text-2xl text-primary mb-4 flex items-center space-x-2">
+                        <i class="fas fa-route"></i>
+                        <span data-translate="search-trains">Search Trains</span>
+                    </h3>
+                    <form id="searchTrainForm" onsubmit="searchTrains(event)" class="space-y-4">
+                        <input type="text" id="fromInput" data-translate-placeholder="from-station-placeholder" placeholder="From Station Code (e.g., HYB)" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <input type="text" id="toInput" data-translate-placeholder="to-station-placeholder" placeholder="To Station Code (e.g., MAS)" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <input type="date" id="searchDateInput" data-translate-placeholder="travel-date-placeholder" placeholder="Travel Date" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold" data-translate="search">Search</button>
+                    </form>
+                    <div id="searchResult" class="mt-4 p-4 border border-border rounded-lg bg-secondary/30 text-secondary-foreground text-sm hidden">
+                    </div>
+                </div>
+
+                 
+              
+<!-- Enhanced Emergency & Location Services Card -->
+<div class="bg-background rounded-xl p-6 shadow-xl border border-border">
+    <h3 class="font-display font-bold text-2xl text-primary mb-4 flex items-center space-x-2">
+        <i class="fas fa-shield-alt"></i>
+        <span data-translate="police-station">Emergency & Location Services</span>
+    </h3>
+    <div class="space-y-4">
+        <p class="text-muted-foreground text-sm" data-translate="police-description">
+            Find emergency services and nearby facilities with one click. We'll use your current location to find the nearest services.
+        </p>
+        
+        <!-- Manual Location Input (Fallback) -->
+        <div class="bg-secondary/30 p-4 rounded-lg mb-4">
+            <p class="text-sm font-semibold mb-2">📍 Manual Location (Optional)</p>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <input type="text" id="manualLat" placeholder="Latitude" class="bg-input border border-border rounded p-2">
+                <input type="text" id="manualLng" placeholder="Longitude" class="bg-input border border-border rounded p-2">
+            </div>
+            <button onclick="useManualLocation()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded mt-2">
+                Use Manual Coordinates
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+            <button onclick="findEnhancedNearestPoliceStation()" 
+                    class="btn-primary py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 text-sm">
+                <i class="fas fa-police-box"></i>
+                <span>Find Nearest Police</span>
+            </button>
+            
+            <button onclick="showEmergencyContacts()" 
+                    class="bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 text-sm">
+                <i class="fas fa-phone-emergency"></i>
+                <span>Emergency Contacts</span>
+            </button>
+        </div>
+        
+        <div class="border-t border-border pt-4">
+            <p class="text-sm font-semibold text-muted-foreground mb-2">Find Nearby Services:</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button onclick="findNearbyServices('hospital')" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs flex items-center justify-center space-x-1">
+                    <i class="fas fa-hospital"></i>
+                    <span>Hospitals</span>
+                </button>
+                
+                <button onclick="findNearbyServices('pharmacy')" 
+                        class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs flex items-center justify-center space-x-1">
+                    <i class="fas fa-pills"></i>
+                    <span>Pharmacies</span>
+                </button>
+                
+                <button onclick="findNearbyServices('atm')" 
+                        class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-xs flex items-center justify-center space-x-1">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>ATMs</span>
+                </button>
+
+                <button onclick="findNearbyServices('restaurant')" 
+                        class="bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg text-xs flex items-center justify-center space-x-1">
+                    <i class="fas fa-utensils"></i>
+                    <span>Restaurants</span>
+                </button>
+
+                <button onclick="findNearbyServices('hotel')" 
+                        class="bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg text-xs flex items-center justify-center space-x-1">
+                    <i class="fas fa-hotel"></i>
+                    <span>Hotels</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="locationStatus" class="text-xs text-muted-foreground mt-2 hidden">
+            <i class="fas fa-spinner fa-spin mr-1"></i>
+            <span>Getting your location...</span>
+        </div>
+        
+        <div id="policeStationResult" class="mt-4 p-4 border border-border rounded-lg bg-secondary/30 text-secondary-foreground text-sm hidden">
+        </div>
+    </div>
+</div>
+        
+        
+
+                <div class="bg-background rounded-xl p-6 shadow-xl border border-border">
+                    <h3 class="font-display font-bold text-2xl text-red-500 mb-4 flex items-center space-x-2">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span data-translate="emergency-report">Emergency Report</span>
+                    </h3>
+                    <form id="emergencyForm" onsubmit="reportEmergency(event)" class="space-y-4">
+                        <select id="emergencyType" class="w-full bg-input border border-border rounded-lg p-3 text-foreground" required>
+                            <option value="" data-translate="select-emergency">Select Emergency Type</option>
+                            <option value="medical" data-translate="medical-emergency">Medical Emergency</option>
+                            <option value="security" data-translate="security-issue">Security Issue</option>
+                            <option value="fire" data-translate="fire-emergency">Fire Emergency</option>
+                            <option value="accident" data-translate="accident">Accident</option>
+                            <option value="other" data-translate="other">Other</option>
+                        </select>
+                        <textarea id="emergencyDescription" data-translate-placeholder="emergency-description-placeholder" placeholder="Describe the emergency situation..." rows="3" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required></textarea>
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white w-full py-3 rounded-lg font-semibold flex items-center justify-center space-x-2">
+                            <i class="fas fa-phone"></i>
+                            <span data-translate="report-emergency">Report Emergency</span>
+                        </button>
+                    </form>
+                    <div id="emergencyResult" class="mt-4 p-4 border border-border rounded-lg bg-red-100 text-red-800 text-sm hidden">
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-xl p-6 shadow-xl border border-border lg:col-span-2">
+                    <h3 class="font-display font-bold text-2xl text-primary mb-4 flex items-center space-x-2">
+                        <i class="fas fa-chair"></i>
+                        <span data-translate="seat-availability">Seat Availability</span>
+                    </h3>
+                    <form id="seatAvailabilityForm" onsubmit="checkSeat(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="seatTrainInput" data-translate-placeholder="train-no-placeholder" placeholder="Train No." class="bg-input border border-border rounded-lg p-3 text-foreground" required>
+                        <input type="text" id="seatFromInput" data-translate-placeholder="from-stn-placeholder" placeholder="From Stn Code" class="bg-input border border-border rounded-lg p-3 text-foreground" required>
+                        <input type="text" id="seatToInput" data-translate-placeholder="to-stn-placeholder" placeholder="To Stn Code" class="bg-input border border-border rounded-lg p-3 text-foreground" required>
+                        <input type="date" id="seatDateInput" data-translate-placeholder="date-placeholder" placeholder="Date" class="bg-input border border-border rounded-lg p-3 text-foreground" required>
+                        
+                        <select id="classTypeInput" class="bg-input border border-border rounded-lg p-3 text-foreground" required>
+                            <option value="" data-translate="select-class">Select Class</option>
+                            <option value="1A">1A (First AC)</option>
+                            <option value="2A">2A (Second AC)</option>
+                            <option value="3A">3A (Third AC)</option>
+                            <option value="SL">SL (Sleeper)</option>
+                        </select>
+                        <select id="quotaInput" class="bg-input border border-border rounded-lg p-3 text-foreground" required>
+                            <option value="" data-translate="select-quota">Select Quota</option>
+                            <option value="GN">GN (General)</option>
+                            <option value="CK">CK (Tatkal)</option>
+                            <option value="PT">PT (Premium Tatkal)</option>
+                        </select>
+                        
+                        <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold md:col-span-3" data-translate="check-availability">Check Availability</button>
+                    </form>
+                    <div id="seatResult" class="mt-4 p-4 border border-border rounded-lg bg-secondary/30 text-secondary-foreground text-sm hidden">
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-xl p-6 shadow-xl border border-border lg:col-span-2">
+                    <h3 class="font-display font-bold text-2xl text-primary mb-4 flex items-center space-x-2">
+                        <i class="fas fa-building"></i>
+                        <span data-translate="station-search">Station Search</span>
+                    </h3>
+                    <form id="stationSearchForm" onsubmit="searchStation(event)" class="space-y-4">
+                        <input type="text" id="stationQueryInput" data-translate-placeholder="station-search-placeholder" placeholder="Enter Station Name or Code (e.g., Hyderabad)" class="w-full bg-input border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground" required>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold" data-translate="search-station">Search Station</button>
+                    </form>
+                    <div id="stationResult" class="mt-4 p-4 border border-border rounded-lg bg-secondary/30 text-secondary-foreground text-sm hidden">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-20 bg-background border-t border-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display font-bold text-3xl md:text-4xl text-foreground mb-4" data-translate="about-title">About RailInfo</h2>
+            </div>
+            <div class="max-w-3xl mx-auto text-center space-y-4 text-muted-foreground">
+                <p data-translate="about-description">RailInfo is a project built to simplify railway inquiries using a modern interface. We leverage real-time railway APIs to provide up-to-date information on PNR status, train schedules, and live running status.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-20 bg-secondary">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display font-bold text-3xl md:text-4xl text-secondary-foreground mb-4" data-translate="contact-title">Get in Touch</h2>
+            </div>
+            <div class="max-w-xl mx-auto space-y-6 text-secondary-foreground">
+                <p class="text-center"><i class="fas fa-envelope mr-2"></i> support@railinfo.com</p>
+                <form class="space-y-4 bg-background p-6 rounded-xl shadow-lg">
+                    <input type="text" data-translate-placeholder="name-placeholder" placeholder="Your Name" class="w-full bg-input border border-border rounded-lg p-3 text-foreground">
+                    <input type="email" data-translate-placeholder="email-placeholder" placeholder="Your Email" class="w-full bg-input border border-border rounded-lg p-3 text-foreground">
+                    <textarea data-translate-placeholder="message-placeholder" placeholder="Your Message" rows="4" class="w-full bg-input border border-border rounded-lg p-3 text-foreground"></textarea>
+                    <button type="submit" class="w-full btn-primary py-3 rounded-lg font-semibold" data-translate="send-message">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <div id="chatModal" class="fixed inset-0 chat-modal-overlay hidden flex items-center justify-center z-50">
+        <div class="bg-background border border-border w-full max-w-2xl max-h-[80vh] rounded-2xl shadow-2xl flex flex-col mx-4">
+            <div class="flex justify-between items-center p-6 border-b border-border">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <i id="chatModalIcon" class="fas fa-comments text-primary-foreground"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-display font-bold text-foreground" id="chatModalTitle">Chat Assistant</h3>
+                        <p class="text-sm text-muted-foreground" id="chatModalSubtitle">Ask me anything about railways</p>
+                    </div>
+                </div>
+                <button id="closeChatModal" class="p-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-accent transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div id="chatMessages" class="flex-1 p-6 overflow-y-auto space-y-4 min-h-[300px] max-h-[400px]">
+                <div class="chat-message-bot p-4 rounded-xl max-w-[80%]">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-primary-foreground text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm">Hello! I'm your railway assistant. How can I help you today?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div id="chatInputArea" class="p-6 border-t border-border">
+                <div class="flex items-center space-x-3">
+                    <input id="chatInput" type="text" placeholder="Type your railway query..." 
+                           class="flex-1 bg-input border border-border rounded-xl p-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                    <button id="sendTextBtn" class="btn-primary px-6 py-4 rounded-xl font-semibold hover:scale-105 transition-transform">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+         
+            <div id="voiceInputArea" class="hidden p-6 border-t border-border text-center">
+                <div id="recordButtonContainer" class="flex justify-center mb-4">
+                    <button id="startRecordingBtn" class="btn-primary w-24 h-24 rounded-full flex items-center justify-center text-3xl transition-transform hover:scale-105" title="Start Recording">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="stopRecordingBtn" class="hidden bg-red-600 hover:bg-red-700 w-24 h-24 rounded-full flex items-center justify-center text-3xl transition-transform hover:scale-105" title="Stop Recording">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+                <p id="recordingStatusText" class="text-muted-foreground text-lg font-semibold">Press the microphone to start recording.</p>
+                <p id="recordingTimer" class="text-sm text-muted-foreground mt-1">Maximum 15 seconds.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-8 bg-background border-t border-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground text-sm">
+            <p data-translate="footer-copyright">&copy; 2025 RailInfo Assistant. All rights reserved.</p>
+            <div class="mt-2 space-x-4">
+                <a href="#" class="hover:text-primary transition-colors" data-translate="privacy-policy">Privacy Policy</a>
+                <a href="#" class="hover:text-primary transition-colors" data-translate="terms-service">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+<script>
+const API_BASE_URL = window.location.origin;
+const MAX_RECORDING_TIME_MS = 15000; // 15 seconds limit
+
+// --- DOM Elements ---
+const chatModal = document.getElementById('chatModal');
+const chatMessages = document.getElementById('chatMessages');
+const openVoiceModalBtn = document.getElementById('openVoiceModalBtn');
+const openTextModalBtn = document.getElementById('openTextModalBtn');
+const closeChatModalBtn = document.getElementById('closeChatModal');
+const chatInputArea = document.getElementById('chatInputArea');
+const voiceInputArea = document.getElementById('voiceInputArea');
+const startRecordingBtn = document.getElementById('startRecordingBtn');
+const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+const recordingStatusText = document.getElementById('recordingStatusText');
+const recordingTimer = document.getElementById('recordingTimer');
+const chatInput = document.getElementById('chatInput');
+const sendTextBtn = document.getElementById('sendTextBtn');
+const languageSelect = document.getElementById('languageSelect');
+const mobileLanguageSelect = document.getElementById('mobileLanguageSelect');
+
+let mediaRecorder;
+let audioChunks = [];
+let stream;
+let recorderTimeout;
+let timerInterval;
+let recordingTime = 0;
+let currentLang = 'en';
+
+// --- Utility Functions ---
+
+function getCurrentLanguage() {
+    return (languageSelect && languageSelect.value) || (mobileLanguageSelect && mobileLanguageSelect.value) || 'en';
+}
+
+function addChatMessage(sender, text) {
+    if (!chatMessages) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message-${sender} p-4 rounded-xl max-w-[80%] ${sender === 'user' ? 'ml-auto' : ''}`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'flex items-start space-x-3';
+    
+    const iconContainer = document.createElement('div');
+    iconContainer.className = `w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${sender === 'user' ? 'bg-primary' : 'bg-secondary'}`;
+    
+    const icon = document.createElement('i');
+    icon.className = `fas ${sender === 'user' ? 'fa-user text-primary-foreground' : 'fa-robot text-secondary-foreground'} text-sm`;
+    
+    const textContainer = document.createElement('div');
+    textContainer.className = 'flex-1';
+    
+    const paragraph = document.createElement('p');
+    paragraph.className = 'text-sm whitespace-pre-wrap';
+    paragraph.textContent = text;
+    
+    // Add speaker button for bot messages
+    if (sender === 'bot') {
+        const speakerButton = document.createElement('button');
+        speakerButton.className = 'ml-2 text-muted-foreground hover:text-primary transition-colors text-xs';
+        speakerButton.title = 'Listen to this message';
+        speakerButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+        speakerButton.onclick = () => playBotTextAudio(text, getCurrentLanguage());
+        
+        const textWrapper = document.createElement('div');
+        textWrapper.className = 'flex items-center justify-between';
+        textWrapper.appendChild(paragraph);
+        textWrapper.appendChild(speakerButton);
+        
+        textContainer.appendChild(textWrapper);
+    } else {
+        textContainer.appendChild(paragraph);
+    }
+    
+    iconContainer.appendChild(icon);
+    contentDiv.appendChild(iconContainer);
+    contentDiv.appendChild(textContainer);
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function updateStatus(text, isRecording = false) {
+    if (recordingStatusText) recordingStatusText.textContent = text;
+    
+    if (isRecording) {
+        startRecordingBtn.classList.add('recording-pulse');
+        startRecordingBtn.classList.remove('btn-primary');
+        startRecordingBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+    } else {
+        startRecordingBtn.classList.remove('recording-pulse');
+        startRecordingBtn.classList.add('btn-primary');
+        startRecordingBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+    }
+}
+
+// --- Recording Logic ---
+
+function startTimer() {
+    recordingTime = 0;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        recordingTime += 1000;
+        const seconds = Math.floor(recordingTime / 1000);
+        if (recordingTimer) {
+            recordingTimer.textContent = `Recording: ${seconds}s / 15s`;
+        }
+    }, 1000);
+}
+
+function stopRecordingInternal() {
+    // Clear all timers
+    clearTimeout(recorderTimeout);
+    clearInterval(timerInterval);
+    if (recordingTimer) recordingTimer.textContent = 'Maximum 15 seconds.';
+
+    // Stop the MediaRecorder if it's active
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+
+    // Stop stream tracks to release microphone
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+
+    // Update UI to processing state
+    if (startRecordingBtn) startRecordingBtn.classList.add('hidden');
+    if (stopRecordingBtn) stopRecordingBtn.classList.add('hidden');
+    updateStatus('Recording stopped. Processing...');
+}
+
+// Function exposed to the Stop button
+function stopRecording() {
+    stopRecordingInternal();
+}
+
+async function startRecording() {
+    currentLang = getCurrentLanguage();
+    audioChunks = [];
+    
+    try {
+        // Check for MediaRecorder support
+        if (!navigator.mediaDevices || !window.MediaRecorder) {
+            updateStatus('Your browser does not support audio recording.', false);
+            return;
+        }
+
+        // Get microphone access
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 16000,
+                channelCount: 1
+            } 
+        });
+        
+        // Set up MediaRecorder with better format support
+        const options = { 
+            audioBitsPerSecond: 128000
+        };
+        
+        // Try to find a supported MIME type
+        if (MediaRecorder.isTypeSupported('audio/webm; codecs=opus')) {
+            options.mimeType = 'audio/webm; codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+            options.mimeType = 'audio/webm';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            options.mimeType = 'audio/mp4';
+        } else {
+            // Default to whatever the browser supports
+            console.warn('No preferred MIME type supported, using default');
+        }
+
+        mediaRecorder = new MediaRecorder(stream, options);
+
+        mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            processAudioQuery();
+        };
+
+        // Start recording
+        mediaRecorder.start(1000); // Collect data every second
+        startTimer();
+
+        // Update UI
+        if (startRecordingBtn) startRecordingBtn.classList.add('hidden');
+        if (stopRecordingBtn) stopRecordingBtn.classList.remove('hidden');
+        updateStatus(`Recording started... Language: ${currentLang}`, true);
+
+        // Set a timeout to stop recording automatically after 15 seconds
+        recorderTimeout = setTimeout(stopRecordingInternal, MAX_RECORDING_TIME_MS);
+
+    } catch (error) {
+        console.error('Microphone access denied or error:', error);
+        updateStatus('Error: Could not access microphone. Please check permissions.', false);
+        if (startRecordingBtn) startRecordingBtn.classList.remove('hidden');
+        if (stopRecordingBtn) stopRecordingBtn.classList.add('hidden');
+    }
+}
+
+async function processAudioQuery() {
+    updateStatus('Processing audio query...', false);
+    
+    if (audioChunks.length === 0) {
+        updateStatus('No audio recorded. Try again.');
+        if (startRecordingBtn) startRecordingBtn.classList.remove('hidden');
+        return;
+    }
+
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm; codecs=opus' });
+    
+    // Add a temporary "Sending..." message
+    addChatMessage('user', 'Sending audio query...');
+
+    try {
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'query.webm');
+        formData.append('src_lang', currentLang);
+        formData.append('target_lang', currentLang);
+
+        const response = await fetch(`${API_BASE_URL}/chatbot/`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Remove the temporary "Sending..." message
+        if (chatMessages && chatMessages.lastElementChild && chatMessages.lastElementChild.textContent.includes('Sending audio')) {
+            chatMessages.removeChild(chatMessages.lastElementChild);
+        }
+
+        // Display results
+        addChatMessage('user', data.user_text || '[Unrecognized speech]');
+        addChatMessage('bot', data.bot_response || 'Sorry, I could not process your request.');
+
+        // Play bot audio if available
+        if (data.bot_audio) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBlob = new Blob([Uint8Array.from(atob(data.bot_audio), c => c.charCodeAt(0))], { type: 'audio/mp3' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                
+                audio.onended = () => URL.revokeObjectURL(audioUrl);
+                await audio.play();
+            } catch (audioError) {
+                console.error("Audio playback error:", audioError);
+                // Fallback: try simple base64 playback
+                try {
+                    const audio = new Audio(`data:audio/mp3;base64,${data.bot_audio}`);
+                    await audio.play();
+                } catch (fallbackError) {
+                    console.error("Fallback audio playback also failed:", fallbackError);
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Error in voice chat:', error);
+        // Remove temporary user message
+        if (chatMessages && chatMessages.lastElementChild && chatMessages.lastElementChild.textContent.includes('Sending audio')) {
+            chatMessages.removeChild(chatMessages.lastElementChild);
+        }
+        addChatMessage('bot', 'Sorry, there was an error processing your voice query.');
+    } finally {
+         // Reset UI
+        updateStatus('Press the microphone to start recording.');
+        if (startRecordingBtn) startRecordingBtn.classList.remove('hidden');
+        if (stopRecordingBtn) stopRecordingBtn.classList.add('hidden');
+    }
+}
+
+// --- Text Chat Logic ---
+async function sendTextMessage() {
+    const query = chatInput.value.trim();
+    if (!query) return;
+
+    currentLang = getCurrentLanguage();
+    addChatMessage('user', query);
+    chatInput.value = '';
+
+    // Add thinking message
+    addChatMessage('bot', '...Thinking...');
+    
+    try {
+        const formData = new FormData();
+        formData.append('query', query);
+        formData.append('src_lang', currentLang);
+        formData.append('target_lang', currentLang);
+        
+        const res = await fetch(`${API_BASE_URL}/chatbot/`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+        
+        // Remove thinking message
+        const lastMessage = chatMessages.lastElementChild;
+        if (lastMessage && lastMessage.textContent === '...Thinking...') chatMessages.removeChild(lastMessage);
+        
+        addChatMessage('bot', data.bot_response || 'Sorry, I could not process your request.');
+
+    } catch (error) {
+        console.error('Text chat error:', error);
+        // Remove thinking message
+        const lastMessage = chatMessages.lastElementChild;
+        if (lastMessage && lastMessage.textContent === '...Thinking...') chatMessages.removeChild(lastMessage);
+        
+        addChatMessage('bot', '⚠️ Failed to connect to chatbot server. Please try again.');
+    }
+}
+
+// --- UI/Modal Functions ---
+
+function openChatModal(mode) {
+    const isVoice = mode === 'voice';
+    if (chatModal) {
+        chatModal.classList.remove('hidden');
+        chatModal.classList.add('flex');
+    }
+    
+    // Ensure welcome message is present once
+    if (chatMessages && chatMessages.children.length === 0) {
+        addChatMessage('bot', "Hello! I'm your railway assistant. How can I help you today?");
+    }
+
+    // Toggle input mode
+    if (isVoice) {
+        if (chatInputArea) chatInputArea.classList.add('hidden');
+        if (voiceInputArea) voiceInputArea.classList.remove('hidden');
+        updateStatus('Press the microphone to start recording.');
+    } else {
+        if (chatInputArea) chatInputArea.classList.remove('hidden');
+        if (voiceInputArea) voiceInputArea.classList.add('hidden');
+        if (chatInput) chatInput.focus();
+    }
+    
+    // Reset voice state
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        stopRecordingInternal();
+    }
+}
+
+function closeChatModalFunc() {
+    if (!chatModal) return;
+    chatModal.classList.add('hidden');
+    chatModal.classList.remove('flex');
+    // Clean up any ongoing recording process
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        stopRecordingInternal();
+    }
+    // Clear chat messages for next session
+    if (chatMessages) {
+        chatMessages.innerHTML = `
+            <div class="chat-message-bot p-4 rounded-xl max-w-[80%]">
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-robot text-primary-foreground text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm">Hello! I'm your railway assistant. How can I help you today?</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// --- Text-to-Speech Function ---
+async function playBotTextAudio(text, lang = 'en') {
+    try {
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('lang', lang);
+        
+        const response = await fetch(`${API_BASE_URL}/text-to-speech/`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.audio_base64) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBlob = new Blob([Uint8Array.from(atob(data.audio_base64), c => c.charCodeAt(0))], { type: 'audio/mp3' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                
+                audio.onended = () => URL.revokeObjectURL(audioUrl);
+                await audio.play();
+            } catch (audioError) {
+                console.error("Audio playback error:", audioError);
+                // Fallback: try simple base64 playback
+                try {
+                    const audio = new Audio(`data:audio/mp3;base64,${data.audio_base64}`);
+                    await audio.play();
+                } catch (fallbackError) {
+                    console.error("Fallback audio playback also failed:", fallbackError);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error playing bot audio:', error);
+    }
+}
+
+// --- Form Result Display ---
+function displayResult(resultId, data, service) {
+    const resultElement = document.getElementById(resultId);
+    if (!resultElement) return;
+
+    resultElement.classList.remove('hidden');
+    resultElement.classList.remove('bg-red-100', 'text-red-800', 'bg-secondary/30', 'text-secondary-foreground');
+    
+    if (data.error || data.status === 'error' || (data.data && data.data.response_code !== 200)) {
+        const errorMessage = data.error || data.data?.message || 'An unknown error occurred.';
+        resultElement.classList.add('bg-red-100', 'text-red-800');
+        resultElement.innerHTML = `<div class="font-bold">Error:</div> <p>${errorMessage}</p>`;
+        return;
+    }
+
+    resultElement.classList.add('bg-secondary/30', 'text-secondary-foreground');
+
+    let htmlContent = '';
+    const resultData = data.data || data;
+    
+    switch (service) {
+        case 'pnr':
+            const passengersHtml = resultData.passengers ? resultData.passengers.map(p => `
+                <li class="ml-4">${p.current_status} - Coach: ${p.coach_position || ''}</li>
+            `).join('') : '<li class="ml-4">Information unavailable</li>';
+
+            htmlContent = `
+                <div class="space-y-2">
+                    <h4 class="font-bold text-lg text-primary">PNR: ${resultData.pnr_number}</h4>
+                    <p><strong>Train:</strong> ${resultData.train_number || 'N/A'} - ${resultData.train_name || 'N/A'}</p>
+                    <p><strong>Status:</strong> <span class="text-xl font-bold text-green-500">${resultData.status || 'N/A'}</span></p>
+                    <h5 class="font-semibold mt-2 text-muted-foreground">Passengers:</h5>
+                    <ul class="list-disc list-inside text-sm">${passengersHtml}</ul>
+                </div>
+            `;
+            break;
+            
+        case 'status':
+            htmlContent = `
+                <div class="space-y-2">
+                    <h4 class="font-bold text-lg text-primary">Train Status: ${resultData.train_number}</h4>
+                    <p><strong>Name:</strong> ${resultData.train_name || 'N/A'}</p>
+                    <p><strong>Location:</strong> ${resultData.current_station_name || 'N/A'} (${resultData.current_station_code || 'N/A'})</p>
+                    <p><strong>Delay:</strong> <span class="font-bold ${resultData.late_by_minutes > 0 ? 'text-red-400' : 'text-green-500'}">${resultData.late_by_minutes || 0} minutes</span></p>
+                    <p><strong>Last Updated:</strong> ${resultData.last_updated || 'N/A'}</p>
+                </div>
+            `;
+            break;
+            
+        case 'schedule':
+            const routeHtml = resultData.route ? resultData.route.map(stn => `
+                <li class="flex justify-between border-b border-border py-1 text-sm">
+                    <span>${stn.station_name} (${stn.station_code})</span>
+                    <span>Arr: ${stn.arrival_time || '---'} / Dep: ${stn.departure_time || '---'}</span>
+                </li>
+            `).join('') : '<li class="text-sm">No schedule information available.</li>';
+            
+            htmlContent = `
+                <div class="space-y-2">
+                    <h4 class="font-bold text-lg text-primary">Schedule for Train ${resultData.train_number}</h4>
+                    <p><strong>Name:</strong> ${resultData.train_name || 'N/A'}</p>
+                    <h5 class="font-semibold mt-2 text-muted-foreground">Route:</h5>
+                    <ul class="space-y-1">${routeHtml}</ul>
+                </div>
+            `;
+            break;
+            
+        case 'seat':
+            const availabilityHtml = resultData.availability ? resultData.availability.map(item => `
+                <li class="flex justify-between border-b border-border py-1 text-sm">
+                    <span>${item.date} (${item.class_code})</span>
+                    <span class="font-bold ${item.status === 'AVAILABLE' ? 'text-green-500' : 'text-red-400'}">${item.status} - ${item.number_of_berths}</span>
+                </li>
+            `).join('') : '<li class="text-sm">No availability data found.</li>';
+            
+            htmlContent = `
+                <div class="space-y-2">
+                    <h4 class="font-bold text-lg text-primary">Seat Availability Check</h4>
+                    <p><strong>Quota:</strong> ${resultData.quota_code || 'N/A'} | <strong>Class:</strong> ${resultData.class_code || 'N/A'}</p>
+                    <h5 class="font-semibold mt-2 text-muted-foreground">Availability Status:</h5>
+                    <ul class="space-y-1">${availabilityHtml}</ul>
+                </div>
+            `;
+            break;
+            
+        case 'search':
+            const trainsHtml = resultData.trains ? resultData.trains.slice(0, 5).map(train => `
+                <li class="border-b border-border py-2">
+                    <h5 class="font-bold">${train.train_number} - ${train.train_name}</h5>
+                    <p class="text-xs text-muted-foreground">Departs: ${train.from_station} (${train.departure_time}) | Arrives: ${train.to_station} (${train.arrival_time})</p>
+                </li>
+            `).join('') : '<li class="text-sm">No trains found for this route and date.</li>';
+            
+            htmlContent = `
+                <div class="space-y-2">
+                    <h4 class="font-bold text-lg text-primary">Trains Found: ${resultData.trains ? resultData.trains.length : 0}</h4>
+                    <ul class="divide-y divide-border">${trainsHtml}</ul>
+                </div>
+            `;
+            break;
+            
+        case 'station':
+            const stationsHtml = resultData.data ? resultData.data.slice(0, 5).map(station => `
+                <li class="border-b border-border py-2">
+                    <h5 class="font-bold">${station.station_name}</h5>
+                    <p class="text-xs text-muted-foreground">Code: ${station.station_code}</p>
+                </li>
+            `).join('') : '<li class="text-sm">No stations found matching the query.</li>';
+
+            htmlContent = `
+                <div class="space-y-2">
+                    <h4 class="font-bold text-lg text-primary">Station Search Results:</h4>
+                    <ul class="divide-y divide-border">${stationsHtml}</ul>
+                </div>
+            `;
+            break;
+    }
+
+    resultElement.innerHTML = htmlContent;
+}
+
+function preventToggle(event) {
+    if (event) event.preventDefault();
+}
+
+// --- Railway Form Handlers ---
+
+async function checkPNR(event) {
+    preventToggle(event);
+    const pnr = document.getElementById("pnrInput").value;
+    const resultId = 'pnrResult';
+    if (!pnr) { displayResult(resultId, { error: "Enter a PNR number." }, 'pnr'); return; }
+    try {
+        const res = await fetch(`${API_BASE_URL}/pnr-status/?pnr=${encodeURIComponent(pnr)}`);
+        const data = await res.json();
+        displayResult(resultId, data, 'pnr');
+    } catch (err) {
+        displayResult(resultId, { error: `Failed to fetch: ${err.message}` }, 'pnr');
+    }
+}
+
+async function checkTrain(event) {
+    preventToggle(event);
+    const train = document.getElementById("trainInput").value;
+    const date = document.getElementById("dateInput").value;
+    const resultId = 'trainResult';
+    if (!train || !date) { displayResult(resultId, { error: "Enter train number and date." }, 'status'); return; }
+    try {
+        const res = await fetch(`${API_BASE_URL}/train-status/?train_no=${encodeURIComponent(train)}&date=${encodeURIComponent(date)}`);
+        const data = await res.json();
+        displayResult(resultId, data, 'status');
+    } catch (err) {
+        displayResult(resultId, { error: `Failed to fetch: ${err.message}` }, 'status');
+    }
+}
+
+async function getSchedule(event) {
+    preventToggle(event);
+    const train = document.getElementById("scheduleTrainInput").value;
+    const resultId = 'scheduleResult';
+    if (!train) { displayResult(resultId, { error: "Enter a train number." }, 'schedule'); return; }
+    try {
+        const res = await fetch(`${API_BASE_URL}/train-schedule/?train_no=${encodeURIComponent(train)}`);
+        const data = await res.json();
+        displayResult(resultId, data, 'schedule');
+    } catch (err) {
+        displayResult(resultId, { error: `Failed to fetch: ${err.message}` }, 'schedule');
+    }
+}
+
+async function searchTrains(event) {
+    preventToggle(event);
+    const from = document.getElementById("fromInput").value;
+    const to = document.getElementById("toInput").value;
+    const date = document.getElementById("searchDateInput").value;
+    const resultId = 'searchResult';
+    if (!from || !to || !date) { displayResult(resultId, { error: "Enter source, destination, and date." }, 'search'); return; }
+    try {
+        const res = await fetch(`${API_BASE_URL}/search-trains/?from_station=${encodeURIComponent(from)}&to_station=${encodeURIComponent(to)}&date=${encodeURIComponent(date)}`);
+        const data = await res.json();
+        displayResult(resultId, data, 'search');
+    } catch (err) {
+        displayResult(resultId, { error: `Failed to fetch: ${err.message}` }, 'search');
+    }
+}
+
+async function checkSeat(event) {
+    preventToggle(event);
+    const train = document.getElementById("seatTrainInput").value;
+    const from = document.getElementById("seatFromInput").value;
+    const to = document.getElementById("seatToInput").value;
+    const date = document.getElementById("seatDateInput").value;
+    const classType = document.getElementById("classTypeInput").value;
+    const quota = document.getElementById("quotaInput").value;
+    const resultId = 'seatResult';
+    if (!train || !from || !to || !date || !classType || !quota) { 
+        displayResult(resultId, { error: "Please fill all seat availability fields." }, 'seat'); 
+        return; 
+    }
+    try {
+        const res = await fetch(`${API_BASE_URL}/seat-availability/?train_no=${encodeURIComponent(train)}&from_station=${encodeURIComponent(from)}&to_station=${encodeURIComponent(to)}&date=${encodeURIComponent(date)}&class_code=${encodeURIComponent(classType)}&quota=${encodeURIComponent(quota)}`);
+        const data = await res.json();
+        displayResult(resultId, data, 'seat');
+    } catch (err) {
+        displayResult(resultId, { error: `Failed to fetch: ${err.message}` }, 'seat');
+    }
+}
+
+async function searchStation(event) {
+    preventToggle(event);
+    const query = document.getElementById("stationQueryInput").value;
+    const resultId = 'stationResult';
+    if (!query) { displayResult(resultId, { error: "Enter a station name or code." }, 'station'); return; }
+    try {
+        const res = await fetch(`${API_BASE_URL}/station-autocomplete/?query_str=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        displayResult(resultId, data, 'station');
+    } catch (err) {
+        displayResult(resultId, { error: `Failed to fetch: ${err.message}` }, 'station');
+    }
+}
+
+// --- Location Services ---
+
+async function findEnhancedNearestPoliceStation() {
+    const resultElement = document.getElementById('policeStationResult');
+    resultElement.classList.remove('hidden');
+    resultElement.classList.remove('bg-red-100', 'text-red-800', 'bg-secondary/30', 'text-secondary-foreground');
+    
+    if (!navigator.geolocation) {
+        resultElement.innerHTML = '<div class="font-bold text-red-800">❌ Error:</div> <p>Geolocation is not supported by this browser. Please use a modern browser like Chrome, Firefox, or Safari.</p>';
+        resultElement.classList.add('bg-red-100', 'text-red-800');
+        return;
+    }
+
+    resultElement.innerHTML = '<div class="text-blue-500 flex items-center justify-center"><i class="fas fa-spinner fa-spin mr-2"></i> Getting your location...</div>';
+    resultElement.classList.add('bg-secondary/30', 'text-secondary-foreground');
+    
+    navigator.geolocation.getCurrentPosition(
+        async function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+                resultElement.innerHTML = '<div class="font-bold text-red-800">❌ Error:</div> <p>Invalid location coordinates received. Please try again.</p>';
+                resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+                resultElement.classList.add('bg-red-100', 'text-red-800');
+                return;
+            }
+            
+            resultElement.innerHTML = '<div class="text-blue-500 flex items-center justify-center"><i class="fas fa-spinner fa-spin mr-2"></i> Searching for nearest police station...</div>';
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/enhanced-nearest-police/?lat=${lat}&lon=${lon}`);
+                
+                if (!res.ok) {
+                    throw new Error(`Server error: ${res.status}`);
+                }
+                
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    resultElement.classList.remove('bg-red-100', 'text-red-800');
+                    resultElement.classList.add('bg-secondary/30', 'text-secondary-foreground');
+                    resultElement.innerHTML = `
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-lg text-primary">🚨 Nearest Police Station</h4>
+                            <div class="bg-white/10 p-3 rounded-lg">
+                                <p><strong>📍 ${data.stationName}</strong></p>
+                                <p class="text-sm mt-1">${data.address}</p>
+                                <p class="text-sm mt-2"><strong>Distance:</strong> ${data.distance_km} km away</p>
+                            </div>
+                            
+                            <div class="flex flex-col sm:flex-row gap-2 mt-4">
+                                <button onclick="openDirections(${data.latitude}, ${data.longitude})" 
+                                        class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 flex-1">
+                                    <i class="fas fa-directions"></i>
+                                    <span>Get Directions</span>
+                                </button>
+                                
+                                <button onclick="callNumber('${data.phone}')" 
+                                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 flex-1">
+                                    <i class="fas fa-phone"></i>
+                                    <span>Call ${data.phone}</span>
+                                </button>
+                            </div>
+                            
+                            <div class="mt-3 text-xs text-muted-foreground">
+                                <p>📍 Your location: ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+                    resultElement.classList.add('bg-red-100', 'text-red-800');
+                    resultElement.innerHTML = `<div class="font-bold text-red-800">❌ Error:</div> <p>${data.error || 'Could not find a nearby police station. Please try again or check your location.'}</p>`;
+                }
+            } catch (err) {
+                console.error("Error fetching police station:", err);
+                resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+                resultElement.classList.add('bg-red-100', 'text-red-800');
+                resultElement.innerHTML = `<div class="font-bold text-red-800">❌ Error:</div> <p>Failed to connect to location services: ${err.message}. Please check your internet connection.</p>`;
+            }
+        },
+        function(error) {
+            console.error("Geolocation error:", error);
+            resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+            resultElement.classList.add('bg-red-100', 'text-red-800');
+            
+            let errorMessage = "❌ Location access error: ";
+            if (error.code === error.PERMISSION_DENIED) {
+                errorMessage += "Location permission denied. Please enable location services in your browser settings.";
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                errorMessage += "Location information is unavailable. Please check your GPS/location settings.";
+            } else if (error.code === error.TIMEOUT) {
+                errorMessage += "Location request timed out. Please try again.";
+            } else {
+                errorMessage += "An unknown error occurred. Please try again.";
+            }
+            
+            resultElement.innerHTML = `<div class="font-bold text-red-800">Error:</div> <p>${errorMessage}</p>`;
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 60000
+        }
+    );
+}
+
+async function findNearbyServices(serviceType) {
+    const resultElement = document.getElementById('policeStationResult');
+    resultElement.classList.remove('hidden');
+    resultElement.classList.remove('bg-red-100', 'text-red-800', 'bg-secondary/30', 'text-secondary-foreground');
+    
+    if (!navigator.geolocation) {
+        resultElement.innerHTML = '<div class="font-bold text-red-800">❌ Error:</div> <p>Geolocation is not supported by this browser.</p>';
+        resultElement.classList.add('bg-red-100', 'text-red-800');
+        return;
+    }
+
+    resultElement.innerHTML = '<div class="text-blue-500 flex items-center justify-center"><i class="fas fa-spinner fa-spin mr-2"></i> Getting your location...</div>';
+    resultElement.classList.add('bg-secondary/30', 'text-secondary-foreground');
+    
+    navigator.geolocation.getCurrentPosition(
+        async function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+                resultElement.innerHTML = '<div class="font-bold text-red-800">❌ Error:</div> <p>Invalid location coordinates received.</p>';
+                resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+                resultElement.classList.add('bg-red-100', 'text-red-800');
+                return;
+            }
+            
+            const serviceNames = {
+                'hospital': '🏥 Hospitals',
+                'pharmacy': '💊 Pharmacies',
+                'atm': '🏧 ATMs',
+                'restaurant': '🍴 Restaurants',
+                'hotel': '🏨 Hotels'
+            };
+            
+            resultElement.innerHTML = `<div class="text-blue-500 flex items-center justify-center"><i class="fas fa-spinner fa-spin mr-2"></i> Searching for ${serviceNames[serviceType]}...</div>`;
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/nearby-services/?lat=${lat}&lon=${lon}&service_type=${serviceType}`);
+                
+                if (!res.ok) {
+                    throw new Error(`Server error: ${res.status}`);
+                }
+                
+                const data = await res.json();
+
+                if (data.status === 'success' && data.services && data.services.length > 0) {
+                    resultElement.classList.remove('bg-red-100', 'text-red-800');
+                    resultElement.classList.add('bg-secondary/30', 'text-secondary-foreground');
+                    
+                    let servicesHtml = '';
+                    data.services.forEach(service => {
+                        servicesHtml += `
+                            <div class="bg-white/10 p-3 rounded-lg mb-2">
+                                <p><strong>${service.name}</strong></p>
+                                <p class="text-sm mt-1">${service.address}</p>
+                                <p class="text-sm mt-1"><strong>Distance:</strong> ${service.distance_km} km</p>
+                                <p class="text-sm"><strong>Rating:</strong> ${service.rating}</p>
+                                <div class="flex gap-2 mt-2">
+                                    <button onclick="openDirections(${service.latitude}, ${service.longitude})" 
+                                            class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">
+                                        <i class="fas fa-directions mr-1"></i>Directions
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resultElement.innerHTML = `
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-lg text-primary">${serviceNames[serviceType]}</h4>
+                            <div class="max-h-60 overflow-y-auto">
+                                ${servicesHtml}
+                            </div>
+                            <div class="mt-2 text-xs text-muted-foreground">
+                                <p>📍 Your location: ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+                    resultElement.classList.add('bg-red-100', 'text-red-800');
+                    resultElement.innerHTML = `<div class="font-bold text-red-800">❌ Error:</div> <p>${data.error || `No ${serviceType} found nearby. Try expanding your search area.`}</p>`;
+                }
+            } catch (err) {
+                console.error("Error fetching services:", err);
+                resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+                resultElement.classList.add('bg-red-100', 'text-red-800');
+                resultElement.innerHTML = `<div class="font-bold text-red-800">❌ Error:</div> <p>Failed to connect to location services: ${err.message}</p>`;
+            }
+        },
+        function(error) {
+            console.error("Geolocation error:", error);
+            resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+            resultElement.classList.add('bg-red-100', 'text-red-800');
+            
+            let errorMessage = "❌ Location access error: ";
+            if (error.code === error.PERMISSION_DENIED) {
+                errorMessage += "Location permission denied. Please enable location services.";
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                errorMessage += "Location information is unavailable.";
+            } else if (error.code === error.TIMEOUT) {
+                errorMessage += "Location request timed out.";
+            }
+            
+            resultElement.innerHTML = `<div class="font-bold text-red-800">Error:</div> <p>${errorMessage}</p>`;
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 60000
+        }
+    );
+}
+
+// --- Utility Functions for Location Services ---
+function openDirections(lat, lng) {
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+    } else {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+    }
+}
+
+function callNumber(phoneNumber) {
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        window.location.href = `tel:${phoneNumber}`;
+    } else {
+        alert(`Phone number: ${phoneNumber}\n\nOn mobile devices, this would automatically dial the number.`);
+    }
+}
+
+async function showEmergencyContacts() {
+    const resultElement = document.getElementById('policeStationResult');
+    resultElement.classList.remove('hidden');
+    resultElement.classList.remove('bg-red-100', 'text-red-800', 'bg-secondary/30', 'text-secondary-foreground');
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/emergency-contacts/`);
+        
+        if (!res.ok) {
+            throw new Error(`Server error: ${res.status}`);
+        }
+        
+        const data = await res.json();
+
+        if (data.status === 'success' && data.contacts && data.contacts.length > 0) {
+            resultElement.classList.remove('bg-red-100', 'text-red-800');
+            resultElement.classList.add('bg-secondary/30', 'text-secondary-foreground');
+            
+            let contactsHtml = '';
+            data.contacts.forEach(contact => {
+                contactsHtml += `
+                    <div class="bg-white/10 p-3 rounded-lg mb-2 flex justify-between items-center">
+                        <div>
+                            <p><strong>${contact.name}</strong></p>
+                            <p class="text-sm">${contact.description}</p>
+                        </div>
+                        <button onclick="callNumber('${contact.number}')" 
+                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-1">
+                            <i class="fas fa-phone"></i>
+                            <span>${contact.number}</span>
+                        </button>
+                    </div>
+                `;
+            });
+            
+            resultElement.innerHTML = `
+                <div class="space-y-3">
+                    <h4 class="font-bold text-lg text-primary">🚨 Emergency Contacts</h4>
+                    <div class="max-h-60 overflow-y-auto">
+                        ${contactsHtml}
+                    </div>
+                    <p class="text-xs text-muted-foreground text-center">Tap any number to call immediately</p>
+                </div>
+            `;
+        } else {
+            resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+            resultElement.classList.add('bg-red-100', 'text-red-800');
+            resultElement.innerHTML = `<div class="font-bold text-red-800">❌ Error:</div> <p>${data.error || 'Failed to load emergency contacts. Please check your connection or try again later.'}</p>`;
+        }
+    } catch (err) {
+        console.error("Error fetching emergency contacts:", err);
+        resultElement.classList.remove('bg-secondary/30', 'text-secondary-foreground');
+        resultElement.classList.add('bg-red-100', 'text-red-800');
+        resultElement.innerHTML = `<div class="font-bold text-red-800">❌ Error:</div> <p>Failed to load emergency contacts: ${err.message}</p>`;
+    }
+}
+
+function reportEmergency(event) {
+    preventToggle(event);
+    const type = document.getElementById("emergencyType").value;
+    const description = document.getElementById("emergencyDescription").value;
+    const resultElement = document.getElementById("emergencyResult");
+    resultElement.classList.remove('hidden');
+    resultElement.classList.remove('bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+
+    if (!type || !description) {
+        resultElement.innerHTML = '<div class="font-bold">⚠️ Input Error:</div> <p>Please select an emergency type and describe the situation.</p>';
+        resultElement.classList.add('bg-red-100', 'text-red-800');
+        return;
+    }
+
+    // Simulate sending report
+    console.log("Emergency Reported:", { type, description });
+    resultElement.classList.add('bg-green-100', 'text-green-800');
+    resultElement.innerHTML = `<div class="font-bold">✅ Report Sent!</div> <p>Emergency Type: ${type}. Authorities have been notified. For immediate assistance, please call 100 or 139.</p>`;
+    document.getElementById("emergencyForm").reset();
+}
+
+// --- Theme & Language Functions ---
+function applyTheme(isDark) {
+    document.documentElement.classList.toggle('light', !isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    
+    // Update theme toggle button icons
+    const themeToggle = document.getElementById('themeToggle');
+    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+    
+    if (themeToggle) {
+        themeToggle.innerHTML = isDark ? '<i class="fas fa-sun text-sm"></i>' : '<i class="fas fa-moon text-sm"></i>';
+    }
+    
+    if (mobileThemeToggle) {
+        const icon = mobileThemeToggle.querySelector('i') || document.createElement('i');
+        icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        if (!mobileThemeToggle.querySelector('i')) {
+            mobileThemeToggle.insertBefore(icon, mobileThemeToggle.querySelector('span'));
+        }
+    }
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    applyTheme(!isDark);
+}
+
+// --- Language Translation Data ---
+const translations = {
+    en: { 
+        'app-title': 'RailInfo', 'app-subtitle': 'Smart Railway Assistant', 'nav-home': 'Home', 'nav-services': 'Services', 'nav-about': 'About', 'nav-contact': 'Contact', 'language-label': 'Language', 'toggle-theme': 'Toggle Theme', 'hero-title-1': 'Smart Railway', 'hero-title-2': 'RailInfo System', 'hero-description': 'Get instant access to PNR status, train schedules, seat availability, and more.', 'explore-services': 'Explore Services', 'chat-voice': 'Chat with Voice', 'chat-text': 'Chat with Text', 'services-title': 'Railway Information Services', 'services-description': 'Use the forms below for specific, direct queries.', 'pnr-status': 'PNR Status Check', 'pnr-placeholder': 'Enter 10-digit PNR Number', 'check-status': 'Check Status', 'train-status': 'Live Train Status', 'train-number-placeholder': 'Enter Train Number (e.g., 12001)', 'date-placeholder': 'Date of Journey', 'get-live-status': 'Get Live Status', 'train-schedule': 'Train Schedule', 'get-schedule': 'Get Schedule', 'search-trains': 'Search Trains', 'from-station-placeholder': 'From Station Code (e.g., HYB)', 'to-station-placeholder': 'To Station Code (e.g., MAS)', 'travel-date-placeholder': 'Travel Date', 'search': 'Search', 'police-station': 'Nearest Police Station', 'police-description': 'Find the nearest police station to your current location for assistance.', 'get-location': 'Get My Location', 'emergency-report': 'Emergency Report', 'select-emergency': 'Select Emergency Type', 'medical-emergency': 'Medical Emergency', 'security-issue': 'Security Issue', 'fire-emergency': 'Fire Emergency', 'accident': 'Accident', 'other': 'Other', 'emergency-description-placeholder': 'Describe the emergency situation...', 'report-emergency': 'Report Emergency', 'seat-availability': 'Seat Availability', 'train-no-placeholder': 'Train No.', 'from-stn-placeholder': 'From Stn Code', 'to-stn-placeholder': 'To Stn Code', 'select-class': 'Select Class', 'select-quota': 'Select Quota', 'check-availability': 'Check Availability', 'station-search': 'Station Search', 'station-search-placeholder': 'Enter Station Name or Code (e.g., Hyderabad)', 'search-station': 'Search Station', 'about-title': 'About RailInfo', 'about-description': 'RailInfo is a project built to simplify railway inquiries using a modern interface. We leverage real-time railway APIs to provide up-to-date information on PNR status, train schedules, and live running status.', 'contact-title': 'Get in Touch', 'name-placeholder': 'Your Name', 'email-placeholder': 'Your Email', 'message-placeholder': 'Your Message', 'send-message': 'Send Message', 'footer-copyright': '© 2025 RailInfo Assistant. All rights reserved.', 'privacy-policy': 'Privacy Policy', 'terms-service': 'Terms of Service' 
+    }, 
+    hi: { 
+        'app-title': 'रेलइन्फो', 'app-subtitle': 'स्मार्ट रेलवे सहायक', 'nav-home': 'होम', 'nav-services': 'सेवाएं', 'nav-about': 'हमारे बारे में', 'nav-contact': 'संपर्क', 'language-label': 'भाषा', 'toggle-theme': 'थीम बदलें', 'hero-title-1': 'स्मार्ट रेलवे', 'hero-title-2': 'रेलइन्फो सिस्टम', 'hero-description': 'PNR स्थिति, ट्रेन शेड्यूल, सीट उपलब्धता और अधिक की तत्काल पहुंच प्राप्त करें।', 'explore-services': 'सेवाएं देखें', 'chat-voice': 'आवाज़ से चैट करें', 'chat-text': 'टेक्स्ट से चैट करें', 'services-title': 'रेलवे सूचना सेवाएं', 'services-description': 'विशिष्ट, प्रत्यक्ष प्रश्नों के लिए नीचे दिए गए फॉर्म का उपयोग करें।', 'pnr-status': 'PNR स्थिति जांच', 'pnr-placeholder': '10-अंकीय PNR संख्या दर्ज करें', 'check-status': 'स्थिति जांचें', 'train-status': 'लाइव ट्रेन स्थिति', 'train-number-placeholder': 'ट्रेन संख्या दर्ज करें (जैसे, 12001)', 'date-placeholder': 'यात्रा की तारीख', 'get-live-status': 'लाइव स्थिति प्राप्त करें', 'train-schedule': 'ट्रेन शेड्यूल', 'get-schedule': 'शेड्यूल प्राप्त करें', 'search-trains': 'ट्रेनें खोजें', 'from-station-placeholder': 'मूल स्टेशन कोड (जैसे, HYB)', 'to-station-placeholder': 'गंतव्य स्टेशन कोड (जैसे, MAS)', 'travel-date-placeholder': 'यात्रा की तारीख', 'search': 'खोजें', 'police-station': 'निकटतम पुलिस स्टेशन', 'police-description': 'सहायता के लिए अपने वर्तमान स्थान के निकटतम पुलिस स्टेशन का पता लगाएं।', 'get-location': 'मेरा स्थान प्राप्त करें', 'emergency-report': 'आपातकालीन रिपोर्ट', 'select-emergency': 'आपातकालीन प्रकार चुनें', 'medical-emergency': 'चिकित्सा आपातकाल', 'security-issue': 'सुरक्षा समस्या', 'fire-emergency': 'आग आपातकाल', 'accident': 'दुर्घटना', 'other': 'अन्य', 'emergency-description-placeholder': 'आपातकालीन स्थिति का वर्णन करें...', 'report-emergency': 'आपातकालीन रिपोर्ट करें', 'seat-availability': 'सीट उपलब्धता', 'train-no-placeholder': 'ट्रेन नं.', 'from-stn-placeholder': 'मूल स्टेशन कोड', 'to-stn-placeholder': 'गंतव्य स्टेशन कोड', 'select-class': 'क्लास चुनें', 'select-quota': 'कोटा चुनें', 'check-availability': 'उपलब्धता जांचें', 'station-search': 'स्टेशन खोज', 'station-search-placeholder': 'स्टेशन का नाम या कोड दर्ज करें (जैसे, हैदराबाद)', 'search-station': 'स्टेशन खोजें', 'about-title': 'रेलइन्फो के बारे में', 'about-description': 'रेलइन्फो एक आधुनिक इंटरफेस का उपयोग करके रेलवे पूछताछ को सरल बनाने के लिए बनाया गया एक प्रोजेक्ट है। हम PNR स्थिति, ट्रेन शेड्यूल और लाइव रनिंग स्थिति पर अप-टू-डेट जानकारी प्रदान करने के लिए रियल-TIME रेलवे API का लाभ उठाते हैं।', 'contact-title': 'संपर्क में रहें', 'name-placeholder': 'आपका नाम', 'email-placeholder': 'आपका ईमेल', 'message-placeholder': 'आपका संदेश', 'send-message': 'संदेश भेजें', 'footer-copyright': '© 2025 रेलइन्फो सहायक। सभी अधिकार सुरक्षित।', 'privacy-policy': 'गोपनीयता नीति', 'terms-service': 'सेवा की शर्तें' 
+    },
+    kn: { 
+            'app-title': 'ರೈಲ್‌ಇನ್ಫೋ', 'app-subtitle': 'ಸ್ಮಾರ್ಟ್ ರೈಲ್ವೇ ಸಹಾಯಕ', 'nav-home': 'ಮುಖ್ಯ', 'nav-services': 'ಸೇವೆಗಳು', 'nav-about': 'ನಮ್ಮ ಬಗ್ಗೆ', 'nav-contact': 'ಸಂಪರ್ಕ', 'language-label': 'ಭಾಷೆ', 'toggle-theme': 'ಥೀಮ್ ಬದಲಿಸಿ', 'hero-title-1': 'ಸ್ಮಾರ್ಟ್ ರೈಲ್ವೇ', 'hero-title-2': 'ರೈಲ್‌ಇನ್ಫೋ ಸಿಸ್ಟಮ್', 'hero-description': 'PNR ಸ್ಥಿತಿ, ರೈಲು ವೇಳಾಪಟ್ಟಿ, ಆಸನ ಲಭ್ಯತೆ ಮತ್ತು ಹೆಚ್ಚಿನದಕ್ಕೆ ತ್ವರಿತ ಪ್ರವೇಶ ಪಡೆಯಿರಿ।', 'explore-services': 'ಸೇವೆಗಳನ್ನು ಅನ್ವೇಷಿಸಿ', 'chat-voice': 'ಧ್ವನಿಯೊಂದಿಗೆ ಚಾಟ್ ಮಾಡಿ', 'chat-text': 'ಪಠ್ಯದೊಂದಿಗೆ ಚಾಟ್ ಮಾಡಿ', 'services-title': 'ರೈಲ್ವೇ ಮಾಹಿತಿ ಸೇವೆಗಳು', 'services-description': 'ನಿರ್ದಿಷ್ಟ, ನೇರ ಪ್ರಶ್ನೆಗಳಿಗಾಗಿ ಕೆಳಗಿನ ಫಾರ್ಮ್‌ಗಳನ್ನು ಬಳಸಿ।', 'pnr-status': 'PNR ಸ್ಥಿತಿ ಪರಿಶೀಲನೆ', 'pnr-placeholder': '10-ಅಂಕಿಯ PNR ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ', 'check-status': 'ಸ್ಥಿತಿ ಪರಿಶೀಲಿಸಿ', 'train-status': 'ಲೈವ್ ರೈಲು ಸ್ಥಿತಿ', 'train-number-placeholder': 'ರೈಲು ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ (ಉದಾ., 12001)', 'date-placeholder': 'ಪ್ರಯಾಣದ ದಿನಾಂಕ', 'get-live-status': 'ಲೈವ್ ಸ್ಥಿತಿ ಪಡೆಯಿರಿ', 'train-schedule': 'ರೈಲು ವೇಳಾಪಟ್ಟಿ', 'get-schedule': 'ವೇಳಾಪಟ್ಟಿ ಪಡೆಯಿರಿ', 'search-trains': 'ರೈಲುಗಳನ್ನು ಹುಡುಕಿ', 'from-station-placeholder': 'ಹೊರಡುವ ನಿಲ್ದಾಣ ಕೋಡ್ (ಉದಾ., HYB)', 'to-station-placeholder': 'ಗಮ್ಯ ನಿಲ್ದಾಣ ಕೋಡ್ (ಉದಾ., MAS)', 'travel-date-placeholder': 'ಪ್ರಯಾಣದ ದಿನಾಂಕ', 'search': 'ಹುಡುಕಿ', 'police-station': 'ಅರுகಿನ ಪೊಲೀಸ್ ಠಾಣೆ', 'police-description': 'ಸಹಾಯಕ್ಕಾಗಿ ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಸ್ಥಳಕ್ಕೆ ಹತ್ತಿರದ ಪೊಲೀಸ್ ಠಾಣೆಯನ್ನು ಹುಡುಕಿ।', 'get-location': 'ನನ್ನ ಸ್ಥಳವನ್ನು ಪಡೆಯಿರಿ', 'emergency-report': 'ತುರ್ತು ವರದಿ', 'select-emergency': 'ತುರ್ತು ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ', 'medical-emergency': 'ವೈದ್ಯಕೀಯ ತುರ್ತು', 'security-issue': 'ಭದ್ರತಾ ಸಮಸ್ಯೆ', 'fire-emergency': 'ಬೆಂಕಿಯ ತುರ್ತು', 'accident': 'ಅಪಘಾತ', 'other': 'ಇತರೆ', 'emergency-description-placeholder': 'ತುರ್ತು ಪರಿಸ್ಥಿತಿಯನ್ನು ವಿವರಿಸಿ...', 'report-emergency': 'ತುರ್ತು ವರದಿ ಮಾಡಿ', 'seat-availability': 'ಆಸನ ಲಭ್ಯತೆ', 'train-no-placeholder': 'ರೈಲು ನಂ.', 'from-stn-placeholder': 'ಹೊರಡುವ ನಿಲ್ದಾಣ ಕೋಡ್', 'to-stn-placeholder': 'ಗಮ್ಯ ನಿಲ್ದಾಣ ಕೋಡ್', 'select-class': 'ಕ್ಲಾಸ್ ಆಯ್ಕೆಮಾಡಿ', 'select-quota': 'ಕೋಟಾವನ್ನು ಆಯ್ಕೆಮಾಡಿ', 'check-availability': 'ಲಭ್ಯತೆಯನ್ನು ಪರಿಶೀಲಿಸಿ', 'station-search': 'ನಿಲ್ದಾಣ ಹುಡುಕಾಟ', 'station-search-placeholder': 'ನಿಲ್ದಾಣದ ಹೆಸರು ಅಥವಾ ಕೋಡ್ ನಮೂದಿಸಿ (ಉದಾ., ಹೈದರಾಬಾದ್)', 'search-station': 'ನಿಲ್ದಾಣ ಹುಡುಕಿ', 'about-title': 'ರೈಲ್‌ಇನ್ಫೋ ಬಗ್ಗೆ', 'about-description': 'ರೈಲ್‌ಇನ್ಫೋ ಒಂದು ಆಧುನಿಕ ಇಂಟರ್ಫೇಸ್ ಅನ್ನು ಬಳಸಿಕೊಂಡು ರೈಲ್ವೆ ವಿಚಾರಣೆಗಳನ್ನು ಸರಳಗೊಳಿಸಲು ನಿರ್ಮಿಸಲಾದ ಒಂದು ಯೋಜನೆ। ನಾವು PNR ಸ್ಥಿತಿ, ರೈಲು ವೇಳಾಪಟ್ಟಿ ಮತ್ತು ಲೈವ್ ರನ್ನಿಂಗ್ ಸ್ಥಿತಿಯ ಕುರಿತು ನವೀಕೃತ ಮಾಹಿತಿಯನ್ನು ಒದಗಿಸಲು ರಿಯಲ್-ಟೈಮ್ ರೈಲ್ವೆ API ಗಳನ್ನು ಬಳಸಿಕೊಳ್ಳುತ್ತೇವೆ।', 'contact-title': 'ಸಂಪರ್ಕದಲ್ಲಿರಿ', 'name-placeholder': 'ನಿಮ್ಮ ಹೆಸರು', 'email-placeholder': 'ನಿಮ್ಮ ಇಮೇಲ್', 'message-placeholder': 'ನಿಮ್ಮ ಸಂದೇಶ', 'send-message': 'ಸಂದೇಶ ಕಳುಹಿಸಿ', 'footer-copyright': '© 2025 ರೈಲ್‌ಇನ್ಫೋ ಸಹಾಯಕ. ಎಲ್ಲಾ ಹಕ್ಕುಗಳನ್ನು ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.', 'privacy-policy': 'ಗೌಪ್ಯತಾ ನೀತಿ', 'terms-service': 'ಸೇವಾ ನಿಯಮಗಳು' }, 
+        ta: { 
+            'app-title': 'ரெயில்இன்ஃபோ', 'app-subtitle': 'ஸ்மார்ட் ரெயில்வே உதவியாளர்', 'nav-home': 'முகப்பு', 'nav-services': 'சேவைகள்', 'nav-about': 'எங்களைப் பற்றி', 'nav-contact': 'தொடர்பு', 'language-label': 'மொழி', 'toggle-theme': 'தீம் மாற்று', 'hero-title-1': 'ஸ்மார்ட் ரெயில்வே', 'hero-title-2': 'ரெயில்இன்ஃபோ சிஸ்டம்', 'hero-description': 'PNR நிலை, ரயில் அட்டவணை, இருக்கை கிடைக்கும் தன்மை மற்றும் பலவற்றிற்கு உடனடி அணுகலைப் பெறுங்கள்.', 'explore-services': 'சேவைகளை ஆராயுங்கள்', 'chat-voice': 'குரலுடன் அரட்டை', 'chat-text': 'உரையுடன் அரட்டை', 'services-title': 'ரெயில்வே தகவல் சேவைகள்', 'services-description': 'குறிப்பிட்ட, நேரடி கேள்விகளுக்கு கீழே உள்ள படிவங்களைப் பயன்படுத்தவும்.', 'pnr-status': 'PNR நிலை சரிபார்ப்பு', 'pnr-placeholder': '10-இலக்க PNR எண்ணை உள்ளிடவும்', 'check-status': 'நிலையைச் சரிபார்க்கவும்', 'train-status': 'நேரடி ரயில் நிலை', 'train-number-placeholder': 'ரயில் எண்ணை உள்ளிடவும் (எ.கா., 12001)', 'date-placeholder': 'பயண தேதி', 'get-live-status': 'நேரடி நிலையைப் பெறுங்கள்', 'train-schedule': 'ரயில் அட்டவணை', 'get-schedule': 'அட்டவணையைப் பெறுங்கள்', 'search-trains': 'ரயில்களைத் தேடுங்கள்', 'from-station-placeholder': 'புறப்பாடு நிலைய குறியீடு (எ.கா., HYB)', 'to-station-placeholder': 'இலக்கு நிலைய குறியீடு (எ.கா., MAS)', 'travel-date-placeholder': 'பயண தேதி', 'search': 'தேடு', 'police-station': 'அருகிலுள்ள காவல் நிலையம்', 'police-description': 'உதவிக்காக உங்கள் தற்போதைய இடத்திற்கு அருகிலுள்ள காவல் நிலையத்தைக் கண்டறியவும்.', 'get-location': 'எனது இடத்தைப் பெறுங்கள்', 'emergency-report': 'அவசர அறிக்கை', 'select-emergency': 'அவசர வகையைத் தேர்ந்தெடுக்கவும்', 'medical-emergency': 'மருத்துவ அவசரநிலை', 'security-issue': 'பாதுகாப்பு பிரச்சினை', 'fire-emergency': 'தீ அவசரநிலை', 'accident': 'விபத்து', 'other': 'மற்றவை', 'emergency-description-placeholder': 'அவசர நிலைமையை விவரிக்கவும்...', 'report-emergency': 'அவசரநிலையைப் புகாரளிக்கவும்', 'seat-availability': 'இருக்கை கிடைக்கும் தன்மை', 'train-no-placeholder': 'ரயில் எண்.', 'from-stn-placeholder': 'புறப்பாடு நிலைய குறியீடு', 'to-stn-placeholder': 'இலக்கு நிலைய குறியீடு', 'select-class': 'கிளாஸ்ஸைத் தேர்ந்தெடுக்கவும்', 'select-quota': 'கோட்டாவைத் தேர்ந்தெடுக்கவும்', 'check-availability': 'கிடைக்கும் தன்மையைச் சரிபார்க்கவும்', 'station-search': 'நிலையத் தேடல்', 'station-search-placeholder': 'நிலையத்தின் பெயர் அல்லது குறியீட்டை உள்ளிடவும் (எ.கா., ஹைதராபாத்)', 'search-station': 'நிலையத்தைத் தேடு', 'about-title': 'ரெயில்இன்ஃபோ பற்றி', 'about-description': 'ரெயில்இன்ஃபோ ஒரு நவீன இடைமுகத்தைப் பயன்படுத்தி ரயில்வே விசாரணைகளை எளிமைப்படுத்த உருவாக்கப்பட்ட ஒரு திட்டம். PNR நிலை, ரயில் அட்டவணை மற்றும் நேரடி இயங்கும் நிலை பற்றிய புதுப்பிக்கப்பட்ட தகவல்களை வழங்க நாங்கள் நிகழ்நேர ரயில்வே APIகளைப் பயன்படுத்துகிறோம்.', 'contact-title': 'தொடர்பில் இருங்கள்', 'name-placeholder': 'உங்கள் பெயர்', 'email-placeholder': 'உங்கள் மின்னஞ்சல்', 'message-placeholder': 'உங்கள் செய்தி', 'send-message': 'செய்தியை அனுப்பவும்', 'footer-copyright': '© 2025 ரெயில்இன்ஃபோ உதவியாளர். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.', 'privacy-policy': 'தனியுரிமைக் கொள்கை', 'terms-service': 'சேவை விதிமுறைகள்' }, 
+        te: { 
+            'app-title': 'రైల్‌ఇన్ఫో', 'app-subtitle': 'స్మార్ట్ రైల్వే సహాయకుడు', 'nav-home': 'హోమ్', 'nav-services': 'సేవలు', 'nav-about': 'మా గురించి', 'nav-contact': 'సంప్రదించండి', 'language-label': 'భాష', 'toggle-theme': 'థీమ్‌ను మార్చండి', 'hero-title-1': 'స్మార్ట్ రైల్వే', 'hero-title-2': 'రైల్‌ఇన్ఫో సిస్టమ్', 'hero-description': 'PNR స్థితి, రైలు షెడ్యూల్‌లు, సీట్ లభ్యత మరియు మరిన్నింటికి తక్షణ ప్రాప్యత పొందండి.', 'explore-services': 'సేవలను అన్వేషించండి', 'chat-voice': 'వాయిస్‌తో చాట్ చేయండి', 'chat-text': 'టెక్స్ట్‌తో చాట్ చేయండి', 'services-title': 'రైల్వే సమాచార సేవలు', 'services-description': 'నిర్దిష్ట, ప్రత్యక్ష ప్రశ్నల కోసం దిగువ ఫారమ్‌లను ఉపయోగించండి.', 'pnr-status': 'PNR స్థితి తనిఖీ', 'pnr-placeholder': '10-అంకెల PNR సంఖ్యను నమోదు చేయండి', 'check-status': 'స్థితిని తనిఖీ చేయండి', 'train-status': 'లైవ్ రైలు స్థితి', 'train-number-placeholder': 'రైలు సంఖ్యను నమోదు చేయండి (ఉదా., 12001)', 'date-placeholder': 'ప్రయాణ తేదీ', 'get-live-status': 'లైవ్ స్థితిని పొందండి', 'train-schedule': 'రైలు షెడ్యూల్', 'get-schedule': 'షెడ్యూల్‌ను పొందండి', 'search-trains': 'రైళ్లను వెతకండి', 'from-station-placeholder': 'బయలుదేరే స్టేషన్ కోడ్ (ఉదా., HYB)', 'to-station-placeholder': 'గమ్యస్థాన స్టేషన్ కోడ్ (ఉదా., MAS)', 'travel-date-placeholder': 'ప్రయాణ తేదీ', 'search': 'వెతకండి', 'police-station': 'సమీప పోలీస్ స్టేషన్', 'police-description': 'సహాయం కోసం మీ ప్రస్తుత స్థానానికి సమీపంలోని పోలీస్ స్టేషన్‌ను కనుగొనండి.', 'get-location': 'నా స్థానాన్ని పొందండి', 'emergency-report': 'అత్యవసర నివేదిక', 'select-emergency': 'అత్యవసర రకాన్ని ఎంచుకోండి', 'medical-emergency': 'వైద్య అత్యవసరం', 'security-issue': 'భద్రతా సమస్య', 'fire-emergency': 'అగ్ని అత్యవసరం', 'accident': 'ప్రమాదం', 'other': 'ఇతర', 'emergency-description-placeholder': 'అత్యవసర పరిస్థితిని వివరించండి...', 'report-emergency': 'అత్యవసరాన్ని నివేదించండి', 'seat-availability': 'సీట్ లభ్యత', 'train-no-placeholder': 'రైలు నం.', 'from-stn-placeholder': 'బయలుదేరే స్టేషన్ కోడ్', 'to-stn-placeholder': 'గమ్యస్థాన స్టేషన్ కోడ్', 'select-class': 'క్లాస్‌ను ఎంచుకోండి', 'select-quota': 'కోటాను ఎంచుకోండి', 'check-availability': 'లభ్యతను తనిఖీ చేయండి', 'station-search': 'స్టేషన్ వెతుకులాట', 'station-search-placeholder': 'స్టేషన్ పేరు లేదా కోడ్‌ను నమోదు చేయండి (ఉదా., హైదరాబాద్)', 'search-station': 'స్టేషన్‌ను వెతకండి', 'about-title': 'రైల్‌ఇన్ఫో గురించి', 'about-description': 'రైల్‌ఇన్ఫో ఆధునిక ఇంటర్‌ఫేస్‌ను ఉపయోగించి రైల్వే విచారణలను సరళీకృతం చేయడానికి రూపొందించబడిన ఒక ప్రాజెక్ట్. PNR స్థితి, రైలు షెడ్యూల్‌లు మరియు లైవ్ రన్నింగ్ స్థితిపై తాజా సమాచారాన్ని అందించడానికి మేము రియల్-టైమ్ రైల్వే APIలను ఉపయోగిస్తాము.', 'contact-title': 'సంప్రదించండి', 'name-placeholder': 'మీ పేరు', 'email-placeholder': 'మీ ఇమెయిల్', 'message-placeholder': 'మీ సందేశం', 'send-message': 'సందేశాన్ని పంపండి', 'footer-copyright': '© 2025 రైల్‌ఇన్ఫో సహాయకుడు. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.', 'privacy-policy': 'గోప్యతా విధానం', 'terms-service': 'సేవా నిబంధనలు' },
+    };
+
+function applyLanguage(lang) {
+    currentLang = lang;
+    const selectedTranslations = translations[lang] || translations['en'];
+
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (selectedTranslations[key]) {
+            element.textContent = selectedTranslations[key];
+        }
+    });
+
+    document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-translate-placeholder');
+        if (selectedTranslations[key]) {
+            element.setAttribute('placeholder', selectedTranslations[key]);
+        }
+    });
+
+    // Update language selectors
+    if (languageSelect) languageSelect.value = lang;
+    if (mobileLanguageSelect) mobileLanguageSelect.value = lang;
+}
+
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Theme initialization
+    const themeToggle = document.getElementById('themeToggle');
+    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'light') {
+        applyTheme(false);
+    } else if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        applyTheme(true);
+    } else {
+        applyTheme(true);
+    }
+    
+    if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+    if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
+    
+    // Language initialization
+    const savedLang = localStorage.getItem('language') || 'en';
+    
+    // Initialize mobile language selector if it exists
+    if (mobileLanguageSelect) {
+        mobileLanguageSelect.innerHTML = '';
+        for (const [key, value] of Object.entries(translations)) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = value['app-title'] || key.toUpperCase();
+            mobileLanguageSelect.appendChild(option);
+        }
+    }
+
+    function handleLanguageChange(event) {
+        const lang = event.target.value;
+        localStorage.setItem('language', lang);
+        applyLanguage(lang);
+    }
+
+    if (languageSelect) languageSelect.addEventListener('change', handleLanguageChange);
+    if (mobileLanguageSelect) mobileLanguageSelect.addEventListener('change', handleLanguageChange);
+    
+    applyLanguage(savedLang);
+
+    // Chat Modal Setup
+    if (openVoiceModalBtn) openVoiceModalBtn.addEventListener('click', () => openChatModal('voice'));
+    if (openTextModalBtn) openTextModalBtn.addEventListener('click', () => openChatModal('text'));
+    
+    if (closeChatModalBtn) closeChatModalBtn.addEventListener('click', closeChatModalFunc);
+
+    // Recording and Chat Buttons
+    if (startRecordingBtn) startRecordingBtn.addEventListener('click', startRecording);
+    if (stopRecordingBtn) stopRecordingBtn.addEventListener('click', stopRecording);
+    if (sendTextBtn) sendTextBtn.addEventListener('click', sendTextMessage);
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendTextMessage();
+        });
+    }
+    
+    // Form Submission Handlers
+    const pnrForm = document.getElementById('pnrForm');
+    const trainStatusForm = document.getElementById('trainStatusForm');
+    const scheduleForm = document.getElementById('scheduleForm');
+    const searchTrainForm = document.getElementById('searchTrainForm');
+    const seatAvailabilityForm = document.getElementById('seatAvailabilityForm');
+    const stationSearchForm = document.getElementById('stationSearchForm');
+    const emergencyForm = document.getElementById('emergencyForm');
+    
+    if (pnrForm) pnrForm.onsubmit = checkPNR;
+    if (trainStatusForm) trainStatusForm.onsubmit = checkTrain;
+    if (scheduleForm) scheduleForm.onsubmit = getSchedule;
+    if (searchTrainForm) searchTrainForm.onsubmit = searchTrains;
+    if (seatAvailabilityForm) seatAvailabilityForm.onsubmit = checkSeat;
+    if (stationSearchForm) stationSearchForm.onsubmit = searchStation;
+    if (emergencyForm) emergencyForm.onsubmit = reportEmergency;
+
+    // Mobile Menu
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            if (mobileMenu) mobileMenu.classList.toggle('open');
+        });
+    }
+
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+            // Close mobile menu if open
+            if (mobileMenu) mobileMenu.classList.remove('open');
+        });
+    });
+
+    // Close modal when clicking outside
+    if (chatModal) {
+        chatModal.addEventListener('click', (e) => {
+            if (e.target === chatModal) {
+                closeChatModalFunc();
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>

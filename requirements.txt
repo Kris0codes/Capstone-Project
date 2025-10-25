@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+requests
+python-dotenv
+google-generativeai
+google-cloud-speech
+google-cloud-texttospeech
+pydub
+geopy
+langdetect
+gunicorn
