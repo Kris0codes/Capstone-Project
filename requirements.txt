@@ -9,3 +9,11 @@ pydub
 geopy
 langdetect
 gunicorn
+soundfile
+ffmpeg-python
+gTTS
+torch
+sentencepiece
+python-multipart 
+
+
