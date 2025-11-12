@@ -7,9 +7,14 @@ import datetime
 from typing import Optional, List, Dict, Any, Union
 from enum import Enum
 
+
 from fastapi import FastAPI, UploadFile, File, Query, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi import Form
+from fastapi import Request
+
+import re
 from pydantic import BaseModel
 import requests
 from dotenv import load_dotenv
@@ -21,6 +26,10 @@ from google.cloud import speech, texttospeech
 from pydub import AudioSegment
 from geopy.distance import geodesic
 import math
+
+# Store user locations temporarily (keyed by session or IP)
+USER_LOCATION_CACHE: Dict[str, Dict[str, float]] = {}
+
 
 load_dotenv()
 
@@ -152,7 +161,7 @@ GCLOUD_LANG_MAP_TTS = {
 # App Initialization & Utility
 # ------------------------
 
-app = FastAPI(title="Refactored Railway NLP System API", version="3.0")
+app = FastAPI(title="Refactored Railway NLP System API", version="4.0")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -191,29 +200,36 @@ async def call_rapidapi(endpoint: str, params: Dict[str, Union[str, int]]):
         response.raise_for_status()
         data = response.json()
         
-        if data.get("response_code") not in [200, 204, 201]:
-            return {"error": data.get("message", "API returned a non-success response code."), "data": data}
-
-        return {"status": "success", "data": data}
+        # **FIX: The API uses "status": True to indicate success, not "response_code".**
+        if data.get("status") is True and "data" in data:
+            # This is a successful response
+            return {"status": "success", "data": data}
+        
+        # If 'status' is not True or 'data' is missing, it's an error.
+        error_msg = f"External Railway API Error: {data.get('message', 'API returned an error or unexpected format')}"
+        logging.warning(f"❌ RapidAPI non-success: {error_msg} | FullData: {data}")
+        return {"error": error_msg, "data": data}
         
     except requests.exceptions.RequestException as e:
         logging.error(f"❌ RapidAPI request error for {endpoint}: {e}")
         return {"error": f"Failed to connect to the railway information service: {e}"}
 
 # ------------------------
-# Railway API Tool Functions (for Gemini Function Calling)
+# Railway API Tool Functions
 # ------------------------
 
 async def get_pnr_status(pnr_number: str) -> Dict[str, Any]:
-    """Retrieves the current status of a PNR number. The PNR must be a 10-digit number."""
-    return await call_rapidapi("/api/v1/pnrStatus", {"pnrNumber": pnr_number})
+    return await call_rapidapi("/api/v3/getPNRStatus", {"pnrNumber": pnr_number})
 
-async def get_live_train_status(train_number: str, date: str) -> Dict[str, Any]:
-    """Retrieves the live running status of a train for a given date. Date format should be YYYY-MM-DD."""
+
+async def get_live_train_status(train_number: str, start_day: int = 0) -> Dict[str, Any]:
+    """
+    Retrieves the live running status of a train.
+    start_day: 0 = Today, 1 = Yesterday, 2 = 2 Days Ago, etc.
+    """
     return await call_rapidapi("/api/v1/liveTrainStatus", {
         "trainNo": train_number,
-        "startDay": "1",
-        "date": date
+        "startDay": str(start_day) # Pass '0' for today, '1' for yesterday, etc.
     })
 
 async def get_seat_availability(train_no: str, from_station: str, to_station: str, date: str, class_code: str, quota: str = "GN") -> Dict[str, Any]:
@@ -227,13 +243,13 @@ async def get_seat_availability(train_no: str, from_station: str, to_station: st
         "fromStationCode": from_station.upper(),
         "toStationCode": to_station.upper(),
         "date": date,
-        "classCode": class_code,
+        "classType": class_code,  # Corrected key
         "quota": quota
     })
 
 async def search_trains_between_stations(from_station_code: str, to_station_code: str, date_of_journey: str) -> Dict[str, Any]:
     """Searches for trains running between two station codes on a specific date. Station codes must be short (e.g., HYB, MAS). Date format should be YYYY-MM-DD."""
-    return await call_rapidapi("/api/v3/trainsBetweenStations", {
+    return await call_rapidapi("/api/v3/trainBetweenStations", {
         "fromStationCode": from_station_code.upper(),
         "toStationCode": to_station_code.upper(),
         "dateOfJourney": date_of_journey
@@ -241,7 +257,7 @@ async def search_trains_between_stations(from_station_code: str, to_station_code
     
 async def get_train_schedule(train_number: str) -> Dict[str, Any]:
     """Retrieves the complete route and time-table for a given train number."""
-    return await call_rapidapi("/api/v1/trainSchedule", {"trainNo": train_number})
+    return await call_rapidapi("/api/v1/getTrainSchedule", {"trainNo": train_number})
 
 RAILWAY_TOOLS = [
     get_pnr_status,
@@ -253,7 +269,6 @@ RAILWAY_TOOLS = [
 
 # Re-configure model with tools after RAILWAY_TOOLS is defined
 if GEMINI_API_KEY and RAILWAY_TOOLS:
-    # FIX 1: tools are correctly passed to the GenerativeModel constructor
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(
         "gemini-2.5-flash", 
@@ -272,7 +287,6 @@ class TextChatRequest(BaseModel):
     query: str
     lang: str = "en"
 
-# Add this new endpoint for text-to-speech only
 @app.post("/text-to-speech/")
 async def text_to_speech_only(
     text: str = Form(...),
@@ -483,7 +497,6 @@ async def call_gemini_with_tools(user_query: str, lang: str) -> str:
     
     response = chat.send_message(language_prompt)
     
-    # FIX 2: Correctly extract tool calls from the nested response structure
     tool_calls = []
     if response.candidates and response.candidates[0].content.parts:
         tool_calls.extend([
@@ -522,69 +535,141 @@ async def call_gemini_with_tools(user_query: str, lang: str) -> str:
 
 @app.post("/chatbot/")
 async def unified_chatbot_voice_or_text(
+    request: Request,
     file: Optional[UploadFile] = File(None),
     query: Optional[str] = Form(None),
-    src_lang: str = Form("en")  # This will be overridden for voice if auto-detection works
+    src_lang: str = Form("en")
 ):
     """
-    Unified endpoint for both voice (via file upload) and text queries.
-    Automatically detects language from voice and responds in the same language.
+    Unified chatbot endpoint for both voice (file) and text queries.
+    Handles PNR, train info, and emergency location-aware services with memory.
     """
-    
+
     user_text = ""
-    detected_language = src_lang  # Default to provided language
-    
-    # 1. Speech-to-Text (if file is provided)
+    detected_language = src_lang
+    user_id = request.client.host  # approximate unique key for caching
+
     if file:
         try:
-            # Call the dedicated STT logic internally
             stt_response = await speech_to_text(file=file, src_lang=src_lang)
             user_text = json.loads(stt_response.body.decode()).get("transcript", "")
-            
             if not user_text:
                 return JSONResponse({
                     "user_text": "[Unrecognized speech]",
-                    "bot_response": "Sorry, I couldn't understand your voice command. Please try speaking clearer.",
+                    "bot_response": "Sorry, I couldn't understand your voice command.",
                     "bot_audio": "",
                     "detected_language": "en"
                 })
-            
-            # AUTO LANGUAGE DETECTION from voice transcript
             detected_language = await detect_language(user_text)
-            logging.info(f"🔍 Detected language: {detected_language} from text: '{user_text}'")
-            
-        except HTTPException as e:
-            logging.error(f"STT failed: {e.detail}")
-            raise e
         except Exception as e:
-            logging.error(f"STT post-processing error: {e}")
+            logging.error(f"STT error: {e}")
             return JSONResponse({
-                "user_text": "[STT Processing Error]",
-                "bot_response": "A critical error occurred while converting speech to text. Please try again.",
+                "user_text": "[STT Error]",
+                "bot_response": "Speech-to-text failed. Please try again.",
                 "bot_audio": "",
                 "detected_language": "en"
             }, status_code=500)
     elif query:
         user_text = query.strip()
-        # For text queries, we can also detect language if needed
-        if user_text and len(user_text) > 10:  # Only detect for substantial text
+        if user_text and len(user_text) > 10:
             detected_language = await detect_language(user_text)
-    
+
     if not user_text:
         raise HTTPException(status_code=400, detail="No query or audio file provided.")
-        
-    logging.info(f"User Query (detected lang: {detected_language}): {user_text}")
 
-    # 2. Get Gemini Chatbot Response (using tools) - Gemini will respond in detected_language
-    bot_response_text = await call_gemini_with_tools(user_text, detected_language)
-    
-    # 3. Text-to-Speech - Use the DETECTED language for TTS output
+    logging.info(f"🧠 Query ({detected_language}): {user_text}")
+    query_lower = user_text.lower()
+    bot_response_text = None
+
+    # --- Detect and cache user location if provided ---
+    lat_match = re.search(r"latitude\s*([\d.]+)", query_lower)
+    lng_match = re.search(r"longitude\s*([\d.]+)", query_lower)
+    if lat_match and lng_match:
+        USER_LOCATION_CACHE[user_id] = {
+            "lat": float(lat_match.group(1)),
+            "lng": float(lng_match.group(1))
+        }
+        bot_response_text = "✅ Got your location! You can now ask for nearby police stations, ATMs, or hotels."
+
+    # --- Handle railway automations ---
+    pnr_match = re.search(r"\b\d{10}\b", query_lower)
+    if not bot_response_text and pnr_match:
+        pnr_number = pnr_match.group(0)
+        api_result = await get_pnr_status(pnr_number)
+        if "error" in api_result:
+            bot_response_text = f"⚠️ Unable to fetch details for PNR {pnr_number}. Error: {api_result['error']}"
+        else:
+            data = api_result["data"].get("data", {})
+            passengers = data.get("passengers", [])
+            info = "\n".join(
+                [f"👤 Passenger {p['no']}: {p['current_status']}" for p in passengers]
+            )
+            bot_response_text = (
+                f"🚆 *PNR {pnr_number}*\n"
+                f"Train: {data.get('train_name', 'N/A')}\n"
+                f"Date: {data.get('doj', 'N/A')}\n"
+                f"{info or 'No passenger details found.'}"
+            )
+
+    elif not bot_response_text and ("live" in query_lower and "train" in query_lower):
+        train_num_match = re.search(r"\b\d{4,5}\b", query_lower)
+        if train_num_match:
+            train_number = train_num_match.group(0)
+            api_result = await get_live_train_status(train_number, start_day=0)
+            if "error" in api_result:
+                bot_response_text = f"⚠️ Could not fetch live status for train {train_number}. Error: {api_result['error']}"
+            else:
+                pos = api_result["data"].get("data", {}).get("position", "No data.")
+                bot_response_text = f"🚉 Train {train_number} Live Status:\n{pos}"
+        else:
+            bot_response_text = "Please provide a valid train number."
+
+    elif not bot_response_text and ("schedule" in query_lower or "route" in query_lower):
+        train_num_match = re.search(r"\b\d{4,5}\b", query_lower)
+        if train_num_match:
+            train_number = train_num_match.group(0)
+            api_result = await get_train_schedule(train_number)
+            if "error" in api_result:
+                bot_response_text = f"⚠️ Could not fetch schedule for train {train_number}. Error: {api_result['error']}"
+            else:
+                route = api_result["data"].get("data", {}).get("route", [])
+                stops = [f"{i+1}. {r['station_name']} ({r['station_code']})" for i, r in enumerate(route[:6])]
+                bot_response_text = "🗓️ " + "\n".join(stops)
+        else:
+            bot_response_text = "Please enter a valid train number."
+
+    # --- Handle emergency / nearby queries ---
+    elif not bot_response_text and any(k in query_lower for k in ["nearest", "nearby", "close", "around"]):
+        if any(w in query_lower for w in ["police", "hospital", "atm", "hotel", "restaurant", "pharmacy"]):
+            service = next((w for w in ["police", "hospital", "atm", "hotel", "restaurant", "pharmacy"] if w in query_lower), None)
+            coords = USER_LOCATION_CACHE.get(user_id)
+            if coords:
+                url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={coords['lat']},{coords['lng']}&radius=3000&type={service}&key={GOOGLE_MAPS_API_KEY}"
+                res = requests.get(url).json()
+                if res.get("results"):
+                    places = [
+                        f"{i+1}. {p['name']} - {p.get('vicinity', 'N/A')}\n🔗 [View on Map](http://googleusercontent.com/maps.google.com/6{p['place_id']})"
+                        for i, p in enumerate(res["results"][:5])
+                    ]
+                    bot_response_text = f"📍 Nearest {service.capitalize()}s near you:\n" + "\n".join(places)
+                else:
+                    bot_response_text = f"⚠️ No nearby {service}s found within 3 km."
+            else:
+                bot_response_text = (
+                    f"📍 To find the nearest {service}, please share your location like:\n"
+                    "'My location is latitude 12.97 and longitude 77.59.'"
+                )
+
+    # --- Fallback to Gemini ---
+    if not bot_response_text:
+        bot_response_text = await call_gemini_with_tools(user_text, detected_language)
+
+    # --- Text to Speech if needed ---
     bot_audio_base64 = ""
-    if file:  # Only generate audio if the original request was a voice query
-        tts_result = await text_to_speech_cloud(bot_response_text, detected_language)
-        bot_audio_base64 = tts_result.get("bot_audio", "")
+    if file:
+        tts = await text_to_speech_cloud(bot_response_text, detected_language)
+        bot_audio_base64 = tts.get("bot_audio", "")
 
-    # 4. Return unified JSON response with detected language info
     return JSONResponse({
         "user_text": user_text,
         "bot_response": bot_response_text,
@@ -601,35 +686,36 @@ async def pnr_status_endpoint(pnr: str = Query(...)):
     result = await get_pnr_status(pnr)
     if result.get("error"):
         raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    # If successful, return the whole 'data' object from the API response
+    return result["data"]
 
 @app.get("/train-status/")
-async def train_status_endpoint(train_no: str = Query(...), date: str = Query(...)):
-    result = await get_live_train_status(train_no, date)
+async def train_status_endpoint(train_no: str = Query(...), start_day: int = Query(0)):
+    result = await get_live_train_status(train_no, start_day)
     if result.get("error"):
         raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    return result["data"]
 
 @app.get("/search-trains/")
 async def search_trains_endpoint(from_station: str = Query(...), to_station: str = Query(...), date: str = Query(...)):
     result = await search_trains_between_stations(from_station, to_station, date)
     if result.get("error"):
         raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    return result["data"]
 
 @app.get("/seat-availability/")
 async def seat_availability_endpoint(train_no: str = Query(...), from_station: str = Query(...), to_station: str = Query(...), date: str = Query(...), class_code: str = Query(...), quota: str = Query("GN")):
     result = await get_seat_availability(train_no, from_station, to_station, date, class_code, quota)
     if result.get("error"):
         raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    return result["data"]
 
 @app.get("/train-schedule/")
 async def train_schedule_endpoint(train_no: str = Query(...)):
     result = await get_train_schedule(train_no)
     if result.get("error"):
         raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    return result["data"]
 
 @app.get("/station-autocomplete/")
 async def station_autocomplete(query_str: str = Query(...)):
@@ -726,7 +812,7 @@ async def enhanced_nearest_police_search(lat: float, lon: float, radius: int = 1
             "longitude": station_lng,
             "distance_km": distance_km,
             "place_id": place_id,
-            "maps_url": f"https://www.google.com/maps/dir/?api=1&destination={station_lat},{station_lng}&travelmode=driving",
+            "maps_url": f"http://googleusercontent.com/maps.google.com/7{station_lat},{station_lng}&travelmode=driving",
             "user_location": {"lat": lat, "lng": lon}
         }
 
@@ -789,7 +875,7 @@ async def find_nearby_services(lat: float, lon: float, service_type: str = "hosp
                 "distance_km": distance_km,
                 "rating": place.get("rating", "Not rated"),
                 "place_id": place.get("place_id"),
-                "maps_url": f"https://www.google.com/maps/dir/?api=1&destination={place_lat},{place_lng}&travelmode=driving"
+                "maps_url": f"http://googleusercontent.com/maps.google.com/8{place_lat},{place_lng}&travelmode=driving"
             })
         
         return {
@@ -844,4 +930,10 @@ async def serve_ui():
         with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
     except Exception as e:
-        return HTMLResponse(content=f"<h1>Error loading UI: {e}</h1>", status_code=500)
+        # Fallback to the original path if frontend/index.html doesn't exist
+        file_path = os.path.join(BASE_DIR, "index.html")
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            return HTMLResponse(content=f"<h1>Error loading UI: {e}</h1>", status_code=500)
